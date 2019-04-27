@@ -1,11 +1,12 @@
 pragma solidity ^0.5.1;
 
 
-contract BNY  {
+contract Election  {
 
     string  public name = "BANCACY";
     string  public symbol = "BNY";
     string  public standard = "BNY Token";
+    uint256 public decimals = 18 ;
     string  public investmentTerm;
     uint256 public totalSupply;
     uint256 public totalinvestmentafterinterest;
@@ -41,10 +42,10 @@ contract BNY  {
 
 
     constructor ()  public {
-         totalSupply = 762300000 ;
-        balanceOf[msg.sender] = 762300000;
+         totalSupply = 762300000*10**decimals;
+        balanceOf[msg.sender] = 762300000*10**decimals;
         balanceOf[address(0)] = 0;
-        emit Transfer(address(0),msg.sender , 762300000);
+        emit Transfer(address(0),msg.sender , 762300000*10**decimals);
       
     }
    
@@ -206,23 +207,25 @@ contract BNY  {
     }
 
 
-    function passiveIncomeInvestment(uint256 _amount) public returns (uint256 ID2) {
+    function passiveIncomeInvestment(uint256 _amount) public  returns (uint256) {
 
         require(balanceOf[msg.sender] >= _amount,"You  have insufficent amount of tokens");
         require(balanceOf[msg.sender] >= minForPassive,"You have insufficent amount of tokens");
         require(_amount > 0,"Investment amount should be bigger than 0");
         
-        uint256 interestOnInvestment =  ((getInterestrate(_amount) * 48) / 10);
-        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp + (15 * 10),1,false);
+        uint256 interestOnInvestment =  ((getInterestrate(_amount) *32) / 365);
+        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp + (60 * 365),1,false);
         investor2Index ++;
         balanceOf[msg.sender] -= _amount;
-        balanceOf[address(0)] += (interestOnInvestment * 10)+ _amount;
+        balanceOf[address(0)] += (interestOnInvestment * 365)+ _amount;
         totalSupply -= _amount;
+        emit Transfer(msg.sender,address(0) , _amount);
+        emit Transfer(address(0) ,address(0) , interestOnInvestment * 365);
         emit Deposit2(msg.sender, _amount);
-        return (investor2Index);
+        return investor2Index;
 
     }
-    function getPasiveIncomeDay(uint256 pasiveincomeID) public returns (uint256 ID2) {
+    function getPasiveIncomeDay(uint256 pasiveincomeID) public view returns (uint256 ID2) {
         return(Investors2[pasiveincomeID].day);
     }
     function getPasiveIncomeAmount(uint256 pasiveincomeID) public returns (uint256 ID2) {
@@ -232,28 +235,29 @@ contract BNY  {
     function releasePasiveIncome(uint256 investmentId2) public returns (bool success) {
     require(Investors2[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
     require(Investors2[investmentId2].spent2 == false, "The investment is already spent");
-    require(block.timestamp >= Investors2[investmentId2].investmentTimeStamp + (15 * Investors2[investmentId2].day)  , "Unlock time for the investment did not pass");
-    require(Investors2[investmentId2].day < 11 , "The investment is already spent");
+    require(Investors2[investmentId2].investmentTimeStamp + (60 * Investors2[investmentId2].day) < block.timestamp  , "Unlock time for the investment did not pass");
+    require(Investors2[investmentId2].day < 366 , "The investment is already spent");
 
     
     totalSupply += Investors2[investmentId2].dailyPassiveIncome;
     balanceOf[address(0)] -= Investors2[investmentId2].dailyPassiveIncome;
     balanceOf[msg.sender] += Investors2[investmentId2].dailyPassiveIncome;
-    if(Investors2[investmentId2].day == 10)
+    if(Investors2[investmentId2].day == 365)
     {
         totalSupply += Investors2[investmentId2].investedAmount2;
         balanceOf[address(0)] -= Investors2[investmentId2].investedAmount2;
         balanceOf[msg.sender] += Investors2[investmentId2].investedAmount2;
         Investors2[investmentId2].spent2 = true;
         Investors2[investmentId2].day ++;
+        emit Transfer(address(0),msg.sender , Investors2[investmentId2].investedAmount2);
         emit Spent(msg.sender, Investors2[investmentId2].investedAmount2);
         return true;
     }
     
     Investors2[investmentId2].day ++;
-
+    emit Transfer(address(0),msg.sender , Investors2[investmentId2].dailyPassiveIncome);
     emit Spent(msg.sender, Investors2[investmentId2].dailyPassiveIncome);
-     if(block.timestamp >= Investors2[investmentId2].investmentTimeStamp + (15 * Investors2[investmentId2].day))
+     if(block.timestamp >= Investors2[investmentId2].investmentTimeStamp + (60 * Investors2[investmentId2].day))
      {
          releasePasiveIncome(investmentId2);
      }
@@ -271,14 +275,14 @@ contract BNY  {
 
     function () payable external{
 
-        require(tokensSold < 227700000, "All tokens are sold");
+        require(tokensSold < 227700000*10**decimals, "All tokens are sold");
        
 
-        uint256 eth = (msg.value*100000) / ( 1 ether /10);
-        uint256 tokens = (eth * tokenPrice)/100000 ;
+        uint256 eth = msg.value;
+        uint256 tokens = eth * tokenPrice ;
         uint256 bounosTokens = getDiscountOnBuy(tokens);
 
-        require(bounosTokens + tokens <= 227700000 - tokensSold, "All tokens are sold");
+        require(bounosTokens + tokens <= 227700000*10**decimals - tokensSold, "All tokens are sold");
 
         tokensSold += tokens + bounosTokens;
         totalSupply += tokens + bounosTokens;
