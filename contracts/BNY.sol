@@ -1,7 +1,7 @@
 pragma solidity ^0.5.1;
 
 
-contract Election  {
+contract BNY  {
 
     string  public name = "BANCACY";
     string  public symbol = "BNY";
@@ -15,10 +15,10 @@ contract Election  {
     uint256 public interestRate = 8;             
     uint256 public multiplicationForMidTerm  = 5;
     uint256 public multiplicationForLongTerm = 20;        
-    uint256 public minForPassive = 1200000 ;
-    uint256 public tokensForSale = 227700000 ;
-    uint256 public tokensSold = 1 ;  
-    uint256 public tokenPrice = 50600 ;     
+    uint256 public minForPassive = 1200000*10**decimals ;
+    uint256 public tokensForSale = 227700000*10**decimals ;
+    uint256 public tokensSold = 1*10**decimals ;  
+    uint256 public tokenPrice = 506000 ;     
   
     struct Investment {
         address investorAddress;
@@ -52,7 +52,8 @@ contract Election  {
 
     event Deposit(
         address indexed _investor,
-        uint256 _investmentValue
+        uint256 _investmentValue,
+        uint256 _ID
     );
     event Deposit2(
         address indexed _investor2,
@@ -72,6 +73,7 @@ contract Election  {
         address indexed _from,
         address indexed _to,
         uint256 _value
+        
     );
     
 
@@ -147,9 +149,10 @@ contract Election  {
             balanceOf[address(0)] += totalinvestmentafterinterest;
             totalSupply -= _amount;
             
-             emit Transfer(msg.sender,address(0) , _amount);
+             
+            emit Deposit(msg.sender, _amount,investorIndex);
+            emit Transfer(msg.sender,address(0) , _amount);
              emit Transfer(address(0),address(0) , totalinvestmentafterinterest - _amount);
-            emit Deposit(msg.sender, _amount);
             return (investorIndex);
         }
 
@@ -163,9 +166,10 @@ contract Election  {
             balanceOf[address(0)] += totalinvestmentafterinterest;
             totalSupply -= _amount;
 
+            
+            emit Deposit(msg.sender, _amount,investorIndex);
             emit Transfer(msg.sender,address(0) , _amount);
              emit Transfer(address(0),address(0) , totalinvestmentafterinterest - _amount);
-            emit Deposit(msg.sender, _amount);
             return (investorIndex);
         }
 
@@ -179,9 +183,10 @@ contract Election  {
             balanceOf[address(0)] += totalinvestmentafterinterest;
             totalSupply -= _amount;
 
+            
+            emit Deposit(msg.sender, _amount,investorIndex);
             emit Transfer(msg.sender,address(0) , _amount);
              emit Transfer(address(0),address(0) , totalinvestmentafterinterest - _amount);
-            emit Deposit(msg.sender, _amount);
             return (investorIndex);
         } 
         
@@ -225,10 +230,10 @@ contract Election  {
         return investor2Index;
 
     }
-    function getPasiveIncomeDay(uint256 pasiveincomeID) public view returns (uint256 ID2) {
+    function getPasiveIncomeDay(uint256 pasiveincomeID) public view returns (uint256) {
         return(Investors2[pasiveincomeID].day);
     }
-    function getPasiveIncomeAmount(uint256 pasiveincomeID) public returns (uint256 ID2) {
+    function getPasiveIncomeAmount(uint256 pasiveincomeID) public view returns (uint256) {
         return(Investors2[pasiveincomeID].investedAmount2);
     }
  
@@ -284,8 +289,8 @@ contract Election  {
 
         require(bounosTokens + tokens <= 227700000*10**decimals - tokensSold, "All tokens are sold");
 
-        tokensSold += tokens + bounosTokens;
-        totalSupply += tokens + bounosTokens;
+        tokensSold += (tokens + bounosTokens);
+        totalSupply += (tokens + bounosTokens);
         balanceOf[msg.sender] += (tokens + bounosTokens);
         emit Transfer(address(0),msg.sender , tokens + bounosTokens);
 
