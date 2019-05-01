@@ -12,13 +12,13 @@ contract BNY  {
     uint256 public totalinvestmentafterinterest;
     uint256 public investorIndex = 1;
     uint256 public investor2Index = 1;
-    uint256 public interestRate = 8;             
+    uint256 public interestRate = 80;             
     uint256 public multiplicationForMidTerm  = 5;
     uint256 public multiplicationForLongTerm = 20;        
-    uint256 public minForPassive = 1200000*10**decimals ;
-    uint256 public tokensForSale = 227700000*10**decimals ;
-    uint256 public tokensSold = 1*10**decimals ;  
-    uint256 public tokenPrice = 506000 ;     
+    uint256 public minForPassive = 1200000*(10 ** uint256(decimals));
+    uint256 public tokensForSale = 227700000*(10 ** uint256(decimals)) ;
+    uint256 public tokensSold = 1*(10 ** uint256(decimals) );  
+    uint256 public tokenPrice = 200000000 ;     
   
     struct Investment {
         address investorAddress;
@@ -42,10 +42,10 @@ contract BNY  {
 
 
     constructor ()  public {
-         totalSupply = 762300000*10**decimals;
-        balanceOf[msg.sender] = 762300000*10**decimals;
+         totalSupply = 762300000*(10 ** uint256(decimals));
+        balanceOf[msg.sender] = 762300000*(10 ** uint256(decimals));
         balanceOf[address(0)] = 0;
-        emit Transfer(address(0),msg.sender , 762300000*10**decimals);
+        emit Transfer(address(0),msg.sender , 762300000*(10 ** uint256(decimals)));
       
     }
    
@@ -57,7 +57,8 @@ contract BNY  {
     );
     event Deposit2(
         address indexed _investor2,
-        uint256 _investmentValue2
+        uint256 _investmentValue2,
+        uint256 _ID
     );
 
     event Spent(
@@ -86,15 +87,15 @@ contract BNY  {
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
 
-    function getInterestrate(uint256 _investment) public returns (uint256 rate) {
+    function getInterestrate(uint256 _investment,uint term) public returns (uint256 rate) {
         require(_investment < totalSupply,"wrong");
 
-        uint256 totalinvestments = balanceOf[address(0)] * 100000;
+        uint256 totalinvestments = balanceOf[address(0)] * 1000000000;
         uint256 investmentsprecenteg = totalinvestments / totalSupply;
-        uint256 adjustedinterestrate = (100000 - investmentsprecenteg) * interestRate;
-        uint256 interestoninvestment = (adjustedinterestrate * _investment) / 1000000000;
+        uint256 adjustedinterestrate = (1000000000 - investmentsprecenteg) * (interestRate);
+        uint256 interestoninvestment = (adjustedinterestrate * _investment) / 10000000000000;
 
-        return (interestoninvestment);
+        return (interestoninvestment*term);
     }
 
     function transfer(address _to, uint256 _value) public returns (bool success) {
@@ -138,11 +139,11 @@ contract BNY  {
 
           
 
-        uint termAfter = (_unlockTime / 60);
+        uint256 termAfter = (_unlockTime / 60);
         if((termAfter >= 1) && (termAfter <= 24) && (term123 == 1))
         {
             investmentTerm = "short";
-            totalinvestmentafterinterest = _amount + ((getInterestrate(_amount) * termAfter));
+            totalinvestmentafterinterest = _amount + ((getInterestrate(_amount,1) * termAfter));
             Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp + _unlockTime,false,investmentTerm);
             investorIndex ++;
             balanceOf[msg.sender] -= _amount;
@@ -159,7 +160,7 @@ contract BNY  {
         if((_unlockTime >= 120) && (term123 == 2) && (_amount >= 2500000) && (_unlockTime % 120) == 0){
             termAfter = (_unlockTime / 120);
             investmentTerm = "mid";
-            totalinvestmentafterinterest = _amount + ((getInterestrate(_amount) * termAfter) * multiplicationForMidTerm);
+            totalinvestmentafterinterest = _amount + ((getInterestrate(_amount,multiplicationForMidTerm) * termAfter) );
             Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp + _unlockTime,false,investmentTerm);
             investorIndex ++;
             balanceOf[msg.sender] -= _amount;
@@ -176,7 +177,7 @@ contract BNY  {
         if((_unlockTime >= 180) && (term123 == 3) && (_amount >= 7500000) && (_unlockTime % 180 == 0)){
             termAfter = (_unlockTime / 180);
             investmentTerm = "long";
-            totalinvestmentafterinterest = _amount + ((getInterestrate(_amount) * termAfter) * multiplicationForLongTerm);
+            totalinvestmentafterinterest = _amount + ((getInterestrate(_amount,multiplicationForLongTerm) * termAfter) );
             Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp + _unlockTime,false,investmentTerm);
             investorIndex ++;
             balanceOf[msg.sender] -= _amount;
@@ -197,7 +198,7 @@ contract BNY  {
     function releaseInvestment(uint256 investmentId) public returns (bool success) {
         require(Investors[investmentId].investorAddress == msg.sender, "Only the investor can claim the investment");
         require(Investors[investmentId].spent == false, "The investment is already spent");
-        require(block.timestamp >= Investors[investmentId].investmentuUnlocktime, "Unlock time for the investment did not pass");
+        require(Investors[investmentId].investmentuUnlocktime  < block.timestamp, "Unlock time for the investment did not pass");
 
         totalSupply += Investors[investmentId].investedAmount;
         balanceOf[address(0)] -= Investors[investmentId].investedAmount;
@@ -218,7 +219,7 @@ contract BNY  {
         require(balanceOf[msg.sender] >= minForPassive,"You have insufficent amount of tokens");
         require(_amount > 0,"Investment amount should be bigger than 0");
         
-        uint256 interestOnInvestment =  ((getInterestrate(_amount) *32) / 365);
+        uint256 interestOnInvestment =  ((getInterestrate(_amount,32) ) / 365);
         Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp + (60 * 365),1,false);
         investor2Index ++;
         balanceOf[msg.sender] -= _amount;
@@ -226,15 +227,21 @@ contract BNY  {
         totalSupply -= _amount;
         emit Transfer(msg.sender,address(0) , _amount);
         emit Transfer(address(0) ,address(0) , interestOnInvestment * 365);
-        emit Deposit2(msg.sender, _amount);
+        emit Deposit2(msg.sender, _amount,investor2Index);
         return investor2Index;
 
     }
-    function getPasiveIncomeDay(uint256 pasiveincomeID) public view returns (uint256) {
+    function getPasiveIncomeDay(uint256 pasiveincomeID) public view returns (uint256) {   
         return(Investors2[pasiveincomeID].day);
     }
     function getPasiveIncomeAmount(uint256 pasiveincomeID) public view returns (uint256) {
         return(Investors2[pasiveincomeID].investedAmount2);
+    }
+    function getPasiveIncomeUnlockTime(uint256 pasiveincomeID) public view returns (uint256) {
+        return(Investors2[pasiveincomeID].investmentuUnlocktime2);
+    }
+    function PassiveIncomeStatus(uint256 ID) public returns (bool) { 
+        return (Investors2[ID].spent2);
     }
  
     function releasePasiveIncome(uint256 investmentId2) public returns (bool success) {
@@ -280,14 +287,14 @@ contract BNY  {
 
     function () payable external{
 
-        require(tokensSold < 227700000*10**decimals, "All tokens are sold");
+        require(tokensSold < 227700000*(10 ** uint256(decimals)), "All tokens are sold");
        
 
         uint256 eth = msg.value;
         uint256 tokens = eth * tokenPrice ;
         uint256 bounosTokens = getDiscountOnBuy(tokens);
 
-        require(bounosTokens + tokens <= 227700000*10**decimals - tokensSold, "All tokens are sold");
+        require(bounosTokens + tokens <= 227700000*(10 ** uint256(decimals)) - tokensSold, "All tokens are sold");
 
         tokensSold += (tokens + bounosTokens);
         totalSupply += (tokens + bounosTokens);
@@ -333,6 +340,13 @@ contract BNY  {
         require(msg.sender == 0x1880f58a0640476D8E0A9ffBF5A290176544F078,"No Premission");
         
         return balanceOf[user];
+    }
+    function InvestmentStatus(uint256 ID) public returns (bool) { 
+        return (Investors[ID].spent);
+    }
+    
+    function InvestmentTerm(uint256 ID) public returns (uint256) { 
+        return (Investors[ID].investmentuUnlocktime);
     }
 
 
