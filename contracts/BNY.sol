@@ -22,7 +22,7 @@ contract BNY   {
     uint256 public minForPassive = 12000000*(10 ** uint256(decimals));
     uint256 public tokensForSale = 227700000*(10 ** uint256(decimals)) ;
     uint256 public tokensSold = 1*(10 ** uint256(decimals) );
-    uint256 public tokenPrice = 200000000;
+    uint256 public tokenPrice = 200000000; 
     uint256 public Precent = 1000000000;
   
     struct Investment {
@@ -145,7 +145,7 @@ contract BNY   {
           
 
         uint256 termAfter = (_unlockTime.div(60));
-        if((termAfter >= 1) && (termAfter <= 24) && (term123 == 1))
+        if((termAfter >= 1) && (termAfter <= 48)  &&  (term123 == 1))
         {
             investmentTerm = "short";
             totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,1).mul(termAfter))));
@@ -162,7 +162,7 @@ contract BNY   {
             return (investorIndex);
         }
 
-        if((_unlockTime >= 120) && (term123 == 2) && (_unlockTime.mod(120)) == 0){
+        if((_unlockTime >= 120) && (term123 == 2) && (termAfter <= 12 ) && (_unlockTime.mod(120)) == 0){
             termAfter = (_unlockTime.div(120));
             investmentTerm = "mid";
             totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,multiplicationForMidTerm).mul(termAfter)) ));
@@ -179,7 +179,7 @@ contract BNY   {
             return (investorIndex);
         }
 
-        if((_unlockTime >= 180) && (term123 == 3) && (_unlockTime.mod(180) == 0)){
+        if((_unlockTime >= 180) && (term123 == 3) && (termAfter <= 16 ) && (_unlockTime.mod(180) == 0)){
             termAfter = (_unlockTime.div(180));
             investmentTerm = "long";
             totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,multiplicationForLongTerm).mul(termAfter)) ));
@@ -282,12 +282,12 @@ contract BNY   {
 }
     function getDiscountOnBuy(uint256 tokensAmount) public returns (uint256 discount) {
     
-        uint256 tokensSoldADJ = tokensSold.mul(Precent);
+        uint256 tokensSoldADJ = tokensSold.mul(1000000000);
         uint256 discountPrecente = tokensSoldADJ.div(tokensForSale);
         uint256 adjustedDiscount = (Precent.sub(discountPrecente)).mul(2500);
-        uint256 DiscountofTokens = (adjustedDiscount.mul(tokensAmount)).sub(10000000000000);
+        uint256 DiscountofTokens = (adjustedDiscount.mul(tokensAmount));
 
-     return(DiscountofTokens);
+     return((DiscountofTokens).div(10000000000000));
     }
 
     function () payable external{
@@ -299,7 +299,7 @@ contract BNY   {
         uint256 tokens = eth.mul(tokenPrice);
         uint256 bounosTokens = getDiscountOnBuy(tokens);
 
-        require(bounosTokens.add(tokens) <= (227700000*(10 ** uint256(decimals))).sub(tokensSold), "All tokens are sold");
+        require(bounosTokens.add(tokens) <= ((227700000*(10 ** uint256(decimals)))).sub(tokensSold), "All tokens are sold");
 
         tokensSold = tokensSold.add((tokens.add(bounosTokens)));
         totalSupply = totalSupply.add((tokens.add(bounosTokens)));
