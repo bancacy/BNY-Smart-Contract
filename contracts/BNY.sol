@@ -43,6 +43,10 @@ library SafeMath {
     assert(c >= _a);
     return c;
   }
+  function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b != 0, "SafeMath: modulo by zero");
+        return a % b;
+    }
 }
 
 
@@ -184,7 +188,7 @@ contract BNY   {
     function investment(uint256 _unlockTime,uint256 _amount,uint term123) public returns (uint256) {
         require(balanceOf[msg.sender] >= _amount,"You dont have sufficent amount of tokens");
         require(_amount > 0,"Investment amount should be bigger than 0");
-        require(_unlockTime >= 60 && (_unlockTime % 60) == 0, "Wrong investment time");
+        require(_unlockTime >= 60 && (_unlockTime.mod(60)) == 0, "Wrong investment time");
 
           
 
@@ -194,49 +198,49 @@ contract BNY   {
             investmentTerm = "short";
             totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,1).mul(termAfter))));
             Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp.add(_unlockTime),false,investmentTerm);
-            investorIndex ++;
+            investorIndex = investorIndex.add(1);
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalinvestmentafterinterest);
             totalSupply = totalSupply.sub(_amount);
             
              
             emit Deposit(msg.sender, _amount,investorIndex);
-            emit Transfer(msg.sender,address(0) , _amount);
-             emit Transfer(address(0),address(0) , totalinvestmentafterinterest - _amount);
+            emit Transfer(msg.sender,address(0),_amount);
+             emit Transfer(address(0),address(0),totalinvestmentafterinterest.sub(_amount));
             return (investorIndex);
         }
 
-        if((_unlockTime >= 120) && (term123 == 2)  && (_unlockTime % 120) == 0){
+        if((_unlockTime >= 120) && (term123 == 2) && (_unlockTime.mod(120)) == 0){
             termAfter = (_unlockTime.div(120));
             investmentTerm = "mid";
             totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,multiplicationForMidTerm).mul(termAfter)) ));
-            Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp + _unlockTime,false,investmentTerm);
-            investorIndex ++;
+            Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp.add(_unlockTime),false,investmentTerm);
+            investorIndex = investorIndex.add(1);
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalinvestmentafterinterest);
             totalSupply = totalSupply.sub(_amount);
 
             
             emit Deposit(msg.sender, _amount,investorIndex);
-            emit Transfer(msg.sender,address(0) , _amount);
-             emit Transfer(address(0),address(0) , totalinvestmentafterinterest - _amount);
+            emit Transfer(msg.sender,address(0),_amount);
+             emit Transfer(address(0),address(0),totalinvestmentafterinterest.sub(_amount));
             return (investorIndex);
         }
 
-        if((_unlockTime >= 180) && (term123 == 3)  && (_unlockTime % 180 == 0)){
-            termAfter = (_unlockTime / 180);
+        if((_unlockTime >= 180) && (term123 == 3) && (_unlockTime.mod(180) == 0)){
+            termAfter = (_unlockTime.div(180));
             investmentTerm = "long";
             totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,multiplicationForLongTerm).mul(termAfter)) ));
-            Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp + _unlockTime,false,investmentTerm);
-            investorIndex ++;
+            Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp.add(_unlockTime),false,investmentTerm);
+            investorIndex = investorIndex.add(1);
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalinvestmentafterinterest);
             totalSupply = totalSupply.sub(_amount);
 
             
             emit Deposit(msg.sender, _amount,investorIndex);
-            emit Transfer(msg.sender,address(0) , _amount);
-             emit Transfer(address(0),address(0) , totalinvestmentafterinterest - _amount);
+            emit Transfer(msg.sender,address(0),_amount);
+             emit Transfer(address(0),address(0),totalinvestmentafterinterest.sub(_amount));
             return (investorIndex);
         } 
         
@@ -253,8 +257,8 @@ contract BNY   {
         balanceOf[address(0)] = balanceOf[address(0)].sub(Investors[investmentId].investedAmount);
         balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors[investmentId].investedAmount);
 
-        Investors[investmentId].spent = true;  
-        emit Transfer(address(0),msg.sender , Investors[investmentId].investedAmount);
+        Investors[investmentId].spent = true;
+        emit Transfer(address(0),msg.sender,Investors[investmentId].investedAmount);
        
         emit Spent(msg.sender, Investors[investmentId].investedAmount);
         
@@ -268,14 +272,14 @@ contract BNY   {
         require(balanceOf[msg.sender] >= minForPassive,"You have insufficent amount of tokens");
         require(_amount > 0,"Investment amount should be bigger than 0");
         
-        uint256 interestOnInvestment =  ((getInterestrate(_amount,75)).div(365));
+        uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
         Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp + (60 * 365),1,false);
-        investor2Index.add(1);
+       investor2Index = investor2Index.add(1);
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
         balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
         totalSupply = totalSupply.sub(_amount);
-        emit Transfer(msg.sender,address(0) , _amount);
-        emit Transfer(address(0) ,address(0) , interestOnInvestment.mul(365));
+        emit Transfer(msg.sender,address(0),_amount);
+        emit Transfer(address(0),address(0),interestOnInvestment.mul(365));
         emit Deposit2(msg.sender, _amount,investor2Index);
         return investor2Index;
 
@@ -305,20 +309,20 @@ contract BNY   {
     balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].dailyPassiveIncome);
     if(Investors2[investmentId2].day == 365)
     {
-        totalSupply += Investors2[investmentId2].investedAmount2;
-        balanceOf[address(0)] -= Investors2[investmentId2].investedAmount2;
-        balanceOf[msg.sender] += Investors2[investmentId2].investedAmount2;
+        totalSupply = totalSupply.add(Investors2[investmentId2].investedAmount2);
+        balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].investedAmount2);
+        balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].investedAmount2);
         Investors2[investmentId2].spent2 = true;
-        Investors2[investmentId2].day ++;
+        Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
         emit Transfer(address(0),msg.sender , Investors2[investmentId2].investedAmount2);
         emit Spent(msg.sender, Investors2[investmentId2].investedAmount2);
         return true;
     }
     
-    Investors2[investmentId2].day ++;
-    emit Transfer(address(0),msg.sender , Investors2[investmentId2].dailyPassiveIncome);
+    Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
+    emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome);
     emit Spent(msg.sender, Investors2[investmentId2].dailyPassiveIncome);
-     if(block.timestamp >= Investors2[investmentId2].investmentTimeStamp + (60 * Investors2[investmentId2].day))
+     if(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((60 * Investors2[investmentId2].day)))
      {
          releasePasiveIncome(investmentId2);
      }
@@ -326,10 +330,10 @@ contract BNY   {
 }
     function getDiscountOnBuy(uint256 tokensAmount) public returns (uint256 discount) {
     
-        uint256 tokensSoldADJ = tokensSold * 1000000000;
-        uint256 discountPrecente =  tokensSoldADJ / tokensForSale ;
-        uint256 adjustedDiscount = (1000000000 - discountPrecente) * 2500;
-        uint256 DiscountofTokens = (adjustedDiscount * tokensAmount) / 10000000000000;     
+        uint256 tokensSoldADJ = tokensSold.mul(Precent);
+        uint256 discountPrecente = tokensSoldADJ.div(tokensForSale);
+        uint256 adjustedDiscount = (Precent.sub(discountPrecente)).mul(2500);
+        uint256 DiscountofTokens = (adjustedDiscount.mul(tokensAmount)).sub(10000000000000);
 
      return(DiscountofTokens);
     }
@@ -340,15 +344,15 @@ contract BNY   {
        
 
         uint256 eth = msg.value;
-        uint256 tokens = eth * tokenPrice ;
+        uint256 tokens = eth.mul(tokenPrice);
         uint256 bounosTokens = getDiscountOnBuy(tokens);
 
-        require(bounosTokens + tokens <= 227700000*(10 ** uint256(decimals)) - tokensSold, "All tokens are sold");
+        require(bounosTokens + tokens <= (227700000*(10 ** uint256(decimals))).sub(tokensSold), "All tokens are sold");
 
-        tokensSold += (tokens + bounosTokens);
-        totalSupply += (tokens + bounosTokens);
-        balanceOf[msg.sender] += (tokens + bounosTokens);
-        emit Transfer(address(0),msg.sender , tokens + bounosTokens);
+        tokensSold = tokensSold.add((tokens.add(bounosTokens)));
+        totalSupply = totalSupply.add((tokens.add(bounosTokens)));
+        balanceOf[msg.sender] = balanceOf[msg.sender].add((tokens.add(bounosTokens)));
+        emit Transfer(address(0),msg.sender,tokens.add(bounosTokens));
 
     }
 
@@ -367,8 +371,8 @@ contract BNY   {
         require(msg.sender == 0x1880f58a0640476D8E0A9ffBF5A290176544F078,"No Premission");
         require(balanceOf[user] >= value, "User have incufficent balance");
 
-        balanceOf[user] -= value;
-        totalSupply -= value;
+        balanceOf[user] = balanceOf[user].sub(value);
+        totalSupply = totalSupply.sub(value);
 
         emit Transfer(user, address(1), value);
 
@@ -378,8 +382,8 @@ contract BNY   {
         require(msg.sender == 0x1880f58a0640476D8E0A9ffBF5A290176544F078,"No Premission");
         
 
-        balanceOf[user] += value;
-        totalSupply += value;
+        balanceOf[user] = balanceOf[user].add(value);
+        totalSupply = totalSupply.add(value);
 
         emit Transfer(address(1), user, value);
 
