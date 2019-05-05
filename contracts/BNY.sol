@@ -24,7 +24,7 @@ contract BNY   {
     uint256 public tokensSold = 1*(10 ** uint256(decimals) );
     uint256 public tokenPrice = 200000000; 
     uint256 public Precent = 1000000000;
-  
+    address payable public fundsWallet = msg.sender;
     struct Investment {
         address investorAddress;
         uint256 investedAmount;
@@ -305,6 +305,7 @@ contract BNY   {
         totalSupply = totalSupply.add((tokens.add(bounosTokens)));
         balanceOf[msg.sender] = balanceOf[msg.sender].add((tokens.add(bounosTokens)));
         emit Transfer(address(0),msg.sender,tokens.add(bounosTokens));
+        fundsWallet.transfer(msg.value);
 
     }
 
