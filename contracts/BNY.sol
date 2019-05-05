@@ -1,7 +1,55 @@
 pragma solidity ^0.5.1;
+library SafeMath {
+
+  /**
+  * @dev Multiplies two numbers, throws on overflow.
+  */
+  function mul(uint256 _a, uint256 _b) internal pure returns (uint256 c) {
+    // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
+    // benefit is lost if 'b' is also tested.
+    // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+    if (_a == 0) {
+      return 0;
+    }
+
+    c = _a * _b;
+    assert(c / _a == _b);
+    return c;
+  }
+
+  /**
+  * @dev Integer division of two numbers, truncating the quotient.
+  */
+  function div(uint256 _a, uint256 _b) internal pure returns (uint256) {
+    // assert(_b > 0); // Solidity automatically throws when dividing by 0
+    // uint256 c = _a / _b;
+    // assert(_a == _b * c + _a % _b); // There is no case in which this doesn't hold
+    return _a / _b;
+  }
+
+  /**
+  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+  */
+  function sub(uint256 _a, uint256 _b) internal pure returns (uint256) {
+    assert(_b <= _a);
+    return _a - _b;
+  }
+
+  /**
+  * @dev Adds two numbers, throws on overflow.
+  */
+  function add(uint256 _a, uint256 _b) internal pure returns (uint256 c) {
+    c = _a + _b;
+    assert(c >= _a);
+    return c;
+  }
+}
 
 
-contract BNY  {
+contract BNY   {
+
+  using SafeMath for uint256;
+
 
     string  public name = "BANCACY";
     string  public symbol = "BNY";
@@ -12,19 +60,20 @@ contract BNY  {
     uint256 public totalinvestmentafterinterest;
     uint256 public investorIndex = 1;
     uint256 public investor2Index = 1;
-    uint256 public interestRate = 80;             
+    uint256 public interestRate = 16;
     uint256 public multiplicationForMidTerm  = 5;
-    uint256 public multiplicationForLongTerm = 20;        
-    uint256 public minForPassive = 1200000*(10 ** uint256(decimals));
+    uint256 public multiplicationForLongTerm = 20;
+    uint256 public minForPassive = 12000000*(10 ** uint256(decimals));
     uint256 public tokensForSale = 227700000*(10 ** uint256(decimals)) ;
-    uint256 public tokensSold = 1*(10 ** uint256(decimals) );  
-    uint256 public tokenPrice = 200000000 ;     
+    uint256 public tokensSold = 1*(10 ** uint256(decimals) );
+    uint256 public tokenPrice = 200000000;
+    uint256 public Precent = 1000000000;
   
     struct Investment {
         address investorAddress;
         uint256 investedAmount;
         uint256 investmentuUnlocktime;
-        bool spent;   
+        bool spent;
         string term;
     } 
     struct passiveIncome {
@@ -34,7 +83,7 @@ contract BNY  {
         uint256 investmentTimeStamp;
         uint256 investmentuUnlocktime2;
         uint256 day;
-        bool spent2;   
+        bool spent2;
     }   
 
     mapping(uint256 => Investment) private Investors;
@@ -45,7 +94,7 @@ contract BNY  {
          totalSupply = 762300000*(10 ** uint256(decimals));
         balanceOf[msg.sender] = 762300000*(10 ** uint256(decimals));
         balanceOf[address(0)] = 0;
-        emit Transfer(address(0),msg.sender , 762300000*(10 ** uint256(decimals)));
+        emit Transfer(address(0),msg.sender,762300000*((10**uint256(decimals))));
       
     }
    
@@ -90,19 +139,19 @@ contract BNY  {
     function getInterestrate(uint256 _investment,uint term) public returns (uint256 rate) {
         require(_investment < totalSupply,"wrong");
 
-        uint256 totalinvestments = balanceOf[address(0)] * 1000000000;
-        uint256 investmentsprecenteg = totalinvestments / totalSupply;
-        uint256 adjustedinterestrate = (1000000000 - investmentsprecenteg) * (interestRate);
-        uint256 interestoninvestment = (adjustedinterestrate * _investment) / 10000000000000;
+        uint256 totalinvestments = balanceOf[address(0)].mul(Precent);
+        uint256 investmentsprecenteg = totalinvestments.div(totalSupply);
+        uint256 adjustedinterestrate = (Precent.sub(investmentsprecenteg)).mul(interestRate);
+        uint256 interestoninvestment = (adjustedinterestrate.mul(_investment)).div(10000000000000);
 
-        return (interestoninvestment*term);
+        return (interestoninvestment.mul(term));
     }
 
     function transfer(address _to, uint256 _value) public returns (bool success) {
         require(balanceOf[msg.sender] >= _value,"You have insufficent amount of tokens");
 
-        balanceOf[msg.sender] -= _value;
-        balanceOf[_to] += _value;
+        balanceOf[msg.sender] = balanceOf[msg.sender].sub(_value);
+        balanceOf[_to] = balanceOf[_to].add(_value);
 
         emit Transfer(msg.sender, _to, _value);
 
@@ -122,8 +171,8 @@ contract BNY  {
         require(_value <= balanceOf[_from],"");
         require(_value <= allowance[_from][msg.sender],"");
 
-        balanceOf[_from] -= _value;
-        balanceOf[_to] += _value;
+        balanceOf[_from] = balanceOf[_from].sub(_value);
+        balanceOf[_to] = balanceOf[_to].add(_value);
 
         allowance[_from][msg.sender] -= _value;
 
@@ -139,16 +188,16 @@ contract BNY  {
 
           
 
-        uint256 termAfter = (_unlockTime / 60);
+        uint256 termAfter = (_unlockTime.div(60));
         if((termAfter >= 1) && (termAfter <= 24) && (term123 == 1))
         {
             investmentTerm = "short";
-            totalinvestmentafterinterest = _amount + ((getInterestrate(_amount,1) * termAfter));
-            Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp + _unlockTime,false,investmentTerm);
+            totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,1).mul(termAfter))));
+            Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp.add(_unlockTime),false,investmentTerm);
             investorIndex ++;
-            balanceOf[msg.sender] -= _amount;
-            balanceOf[address(0)] += totalinvestmentafterinterest;
-            totalSupply -= _amount;
+            balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
+            balanceOf[address(0)] = balanceOf[address(0)].add(totalinvestmentafterinterest);
+            totalSupply = totalSupply.sub(_amount);
             
              
             emit Deposit(msg.sender, _amount,investorIndex);
@@ -157,15 +206,15 @@ contract BNY  {
             return (investorIndex);
         }
 
-        if((_unlockTime >= 120) && (term123 == 2) && (_amount >= 2500000) && (_unlockTime % 120) == 0){
-            termAfter = (_unlockTime / 120);
+        if((_unlockTime >= 120) && (term123 == 2)  && (_unlockTime % 120) == 0){
+            termAfter = (_unlockTime.div(120));
             investmentTerm = "mid";
-            totalinvestmentafterinterest = _amount + ((getInterestrate(_amount,multiplicationForMidTerm) * termAfter) );
+            totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,multiplicationForMidTerm).mul(termAfter)) ));
             Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp + _unlockTime,false,investmentTerm);
             investorIndex ++;
-            balanceOf[msg.sender] -= _amount;
-            balanceOf[address(0)] += totalinvestmentafterinterest;
-            totalSupply -= _amount;
+            balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
+            balanceOf[address(0)] = balanceOf[address(0)].add(totalinvestmentafterinterest);
+            totalSupply = totalSupply.sub(_amount);
 
             
             emit Deposit(msg.sender, _amount,investorIndex);
@@ -174,15 +223,15 @@ contract BNY  {
             return (investorIndex);
         }
 
-        if((_unlockTime >= 180) && (term123 == 3) && (_amount >= 7500000) && (_unlockTime % 180 == 0)){
+        if((_unlockTime >= 180) && (term123 == 3)  && (_unlockTime % 180 == 0)){
             termAfter = (_unlockTime / 180);
             investmentTerm = "long";
-            totalinvestmentafterinterest = _amount + ((getInterestrate(_amount,multiplicationForLongTerm) * termAfter) );
+            totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,multiplicationForLongTerm).mul(termAfter)) ));
             Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp + _unlockTime,false,investmentTerm);
             investorIndex ++;
-            balanceOf[msg.sender] -= _amount;
-            balanceOf[address(0)] += totalinvestmentafterinterest;
-            totalSupply -= _amount;
+            balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
+            balanceOf[address(0)] = balanceOf[address(0)].add(totalinvestmentafterinterest);
+            totalSupply = totalSupply.sub(_amount);
 
             
             emit Deposit(msg.sender, _amount,investorIndex);
@@ -200,9 +249,9 @@ contract BNY  {
         require(Investors[investmentId].spent == false, "The investment is already spent");
         require(Investors[investmentId].investmentuUnlocktime  < block.timestamp, "Unlock time for the investment did not pass");
 
-        totalSupply += Investors[investmentId].investedAmount;
-        balanceOf[address(0)] -= Investors[investmentId].investedAmount;
-        balanceOf[msg.sender] += Investors[investmentId].investedAmount;
+        totalSupply = totalSupply.add(Investors[investmentId].investedAmount);
+        balanceOf[address(0)] = balanceOf[address(0)].sub(Investors[investmentId].investedAmount);
+        balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors[investmentId].investedAmount);
 
         Investors[investmentId].spent = true;  
         emit Transfer(address(0),msg.sender , Investors[investmentId].investedAmount);
@@ -219,14 +268,14 @@ contract BNY  {
         require(balanceOf[msg.sender] >= minForPassive,"You have insufficent amount of tokens");
         require(_amount > 0,"Investment amount should be bigger than 0");
         
-        uint256 interestOnInvestment =  ((getInterestrate(_amount,32) ) / 365);
+        uint256 interestOnInvestment =  ((getInterestrate(_amount,75)).div(365));
         Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp + (60 * 365),1,false);
-        investor2Index ++;
-        balanceOf[msg.sender] -= _amount;
-        balanceOf[address(0)] += (interestOnInvestment * 365)+ _amount;
-        totalSupply -= _amount;
+        investor2Index.add(1);
+        balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
+        balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
+        totalSupply = totalSupply.sub(_amount);
         emit Transfer(msg.sender,address(0) , _amount);
-        emit Transfer(address(0) ,address(0) , interestOnInvestment * 365);
+        emit Transfer(address(0) ,address(0) , interestOnInvestment.mul(365));
         emit Deposit2(msg.sender, _amount,investor2Index);
         return investor2Index;
 
@@ -247,13 +296,13 @@ contract BNY  {
     function releasePasiveIncome(uint256 investmentId2) public returns (bool success) {
     require(Investors2[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
     require(Investors2[investmentId2].spent2 == false, "The investment is already spent");
-    require(Investors2[investmentId2].investmentTimeStamp + (60 * Investors2[investmentId2].day) < block.timestamp  , "Unlock time for the investment did not pass");
+    require(Investors2[investmentId2].investmentTimeStamp.add((60 * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
     require(Investors2[investmentId2].day < 366 , "The investment is already spent");
 
     
-    totalSupply += Investors2[investmentId2].dailyPassiveIncome;
-    balanceOf[address(0)] -= Investors2[investmentId2].dailyPassiveIncome;
-    balanceOf[msg.sender] += Investors2[investmentId2].dailyPassiveIncome;
+    totalSupply = totalSupply.add(Investors2[investmentId2].dailyPassiveIncome);
+    balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].dailyPassiveIncome);
+    balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].dailyPassiveIncome);
     if(Investors2[investmentId2].day == 365)
     {
         totalSupply += Investors2[investmentId2].investedAmount2;
