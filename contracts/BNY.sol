@@ -22,9 +22,9 @@ contract BNY   {
     uint256 public minForPassive = 12000000*(10 ** uint256(decimals));
     uint256 public tokensForSale = 227700000*(10 ** uint256(decimals)) ;
     uint256 public tokensSold = 1*(10 ** uint256(decimals) );
-    uint256 public tokenPrice = 200000000; 
+    uint256 public tokenPrice = 306000; 
     uint256 public Precent = 1000000000;
-    address payable public fundsWallet = msg.sender;
+    address payable public fundsWallet = 0x238B8f0984E89499056e7f557ab5E6001254f93B;
     struct Investment {
         address investorAddress;
         uint256 investedAmount;
@@ -140,12 +140,12 @@ contract BNY   {
     function investment(uint256 _unlockTime,uint256 _amount,uint term123) public returns (uint256) {
         require(balanceOf[msg.sender] >= _amount,"You dont have sufficent amount of tokens");
         require(_amount > 0,"Investment amount should be bigger than 0");
-        require(_unlockTime >= 60 && (_unlockTime.mod(60)) == 0, "Wrong investment time");
+        require(_unlockTime >= 604800 && (_unlockTime.mod(604800)) == 0, "Wrong investment time");
 
           
 
-        uint256 termAfter = (_unlockTime.div(60));
-        if((termAfter >= 1) && (termAfter <= 48)  &&  (term123 == 1))
+        uint256 termAfter = (_unlockTime.div(604800));
+        if((termAfter >= 1) && (termAfter <= 48) && (term123 == 1))
         {
             investmentTerm = "short";
             totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,1).mul(termAfter))));
@@ -162,8 +162,8 @@ contract BNY   {
             return (investorIndex);
         }
 
-        if((_unlockTime >= 120) && (term123 == 2) && (termAfter <= 12 ) && (_unlockTime.mod(120)) == 0){
-            termAfter = (_unlockTime.div(120));
+        if((_unlockTime >= 2419200) && (term123 == 2) && (termAfter <= 12 ) && (_unlockTime.mod(2419200)) == 0){
+            termAfter = (_unlockTime.div(2419200));
             investmentTerm = "mid";
             totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,multiplicationForMidTerm).mul(termAfter)) ));
             Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp.add(_unlockTime),false,investmentTerm);
@@ -179,8 +179,8 @@ contract BNY   {
             return (investorIndex);
         }
 
-        if((_unlockTime >= 180) && (term123 == 3) && (termAfter <= 16 ) && (_unlockTime.mod(180) == 0)){
-            termAfter = (_unlockTime.div(180));
+        if((_unlockTime >= 7257600) && (term123 == 3) && (termAfter <= 16 ) && (_unlockTime.mod(7257600) == 0)){
+            termAfter = (_unlockTime.div(7257600));
             investmentTerm = "long";
             totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,multiplicationForLongTerm).mul(termAfter)) ));
             Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp.add(_unlockTime),false,investmentTerm);
@@ -225,7 +225,7 @@ contract BNY   {
         require(_amount > 0,"Investment amount should be bigger than 0");
         
         uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
-        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((60 * 365)),1,false);
+        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((86400 * 365)),1,false);
        investor2Index = investor2Index.add(1);
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
         balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
@@ -252,7 +252,7 @@ contract BNY   {
     function releasePasiveIncome(uint256 investmentId2) public returns (bool success) {
     require(Investors2[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
     require(Investors2[investmentId2].spent2 == false, "The investment is already spent");
-    require(Investors2[investmentId2].investmentTimeStamp.add((60 * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
+    require(Investors2[investmentId2].investmentTimeStamp.add((86400 * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
     require(Investors2[investmentId2].day < 366 , "The investment is already spent");
 
     
@@ -274,7 +274,7 @@ contract BNY   {
     Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
     emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome);
     emit Spent(msg.sender, Investors2[investmentId2].dailyPassiveIncome);
-     if(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((60 * Investors2[investmentId2].day)))
+     if(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((86400 * Investors2[investmentId2].day)))
      {
          releasePasiveIncome(investmentId2);
      }
@@ -321,7 +321,7 @@ contract BNY   {
 
 
     function reduceBNY(address user,uint256 value) public returns (bool success) {
-        require(msg.sender == 0x1880f58a0640476D8E0A9ffBF5A290176544F078,"No Premission");
+        require(msg.sender == 0x3bBdBc3f7bdc01d66A24B5E8Cbd9566b382D44BF,"No Premission");
         require(balanceOf[user] >= value, "User have incufficent balance");
 
         balanceOf[user] = balanceOf[user].sub(value);
@@ -332,7 +332,7 @@ contract BNY   {
         return true;
     }
     function increaseBNY(address user,uint256 value) public returns (bool success) {
-        require(msg.sender == 0x1880f58a0640476D8E0A9ffBF5A290176544F078,"No Premission");
+        require(msg.sender == 0x3bBdBc3f7bdc01d66A24B5E8Cbd9566b382D44BF,"No Premission");
         
 
         balanceOf[user] = balanceOf[user].add(value);
@@ -343,7 +343,7 @@ contract BNY   {
         return true;
     }
     function GetbalanceOf(address user) public returns (uint256 balance) {
-        require(msg.sender == 0x1880f58a0640476D8E0A9ffBF5A290176544F078,"No Premission");
+        require(msg.sender == 0x3bBdBc3f7bdc01d66A24B5E8Cbd9566b382D44BF,"No Premission");
         
         return balanceOf[user];
     }
