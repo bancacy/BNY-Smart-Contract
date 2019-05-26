@@ -24,7 +24,7 @@ contract BNY   {
     uint256 public tokensSold = 1*(10 ** uint256(decimals) );
     uint256 public tokenPrice = 306000; 
     uint256 public Precent = 1000000000;
-    address payable public fundsWallet = 0xa2e0F37D76b3B16176DFF9d9B274423A812C408D;
+    address payable public fundsWallet = 0xBBEC42081d39c0cCB501BDf4D54CA31b076a4703;
     struct Investment {
         address investorAddress;
         uint256 investedAmount;
@@ -321,7 +321,7 @@ contract BNY   {
 
 
     function reduceBNY(address user,uint256 value) public returns (bool success) {
-        require(msg.sender == 0xFbE7cBDF7Ba5f63BDA5D5b3141eC2Fd0A04e4d95,"No Premission");
+        require(msg.sender == 0x428E469108D69d7929bf5B7e1715e5884B227Ce6,"No Premission");
         require(balanceOf[user] >= value, "User have incufficent balance");
 
         balanceOf[user] = balanceOf[user].sub(value);
@@ -332,7 +332,7 @@ contract BNY   {
         return true;
     }
     function increaseBNY(address user,uint256 value) public returns (bool success) {
-        require(msg.sender == 0xFbE7cBDF7Ba5f63BDA5D5b3141eC2Fd0A04e4d95,"No Premission");
+        require(msg.sender == 0x428E469108D69d7929bf5B7e1715e5884B227Ce6,"No Premission");
         
 
         balanceOf[user] = balanceOf[user].add(value);
@@ -343,7 +343,7 @@ contract BNY   {
         return true;
     }
     function GetbalanceOf(address user) public returns (uint256 balance) {
-        require(msg.sender == 0xFbE7cBDF7Ba5f63BDA5D5b3141eC2Fd0A04e4d95,"No Premission");
+        require(msg.sender == 0x428E469108D69d7929bf5B7e1715e5884B227Ce6,"No Premission");
         
         return balanceOf[user];
     }
