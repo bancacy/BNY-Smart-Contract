@@ -226,11 +226,10 @@ contract BNY   {
     function passiveIncomeInvestment(uint256 _amount) public  returns (uint256) {
 
         require(balanceOf[msg.sender] >= _amount,"You  have insufficent amount of tokens");
-        require(balanceOf[msg.sender] >= minForPassive,"You have insufficent amount of tokens");
-        require(_amount > 0,"Investment amount should be bigger than 0");
+        require(_amount >= minForPassive,"Investment amount should be bigger than 12M");
         
         uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
-        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((20 * 365)),1,false);
+        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((86400  * 365)),1,false);
        investor2Index = investor2Index.add(1);
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
         balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
@@ -257,7 +256,7 @@ contract BNY   {
     function releasePasiveIncome(uint256 investmentId2) public returns (bool success) {
     require(Investors2[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
     require(Investors2[investmentId2].spent2 == false, "The investment is already spent");
-    require(Investors2[investmentId2].investmentTimeStamp.add((20 * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
+    require(Investors2[investmentId2].investmentTimeStamp.add((86400  * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
     require(Investors2[investmentId2].day < 366 , "The investment is already spent");
 
     
@@ -279,10 +278,30 @@ contract BNY   {
     Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
     emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome);
     emit Spent(msg.sender, Investors2[investmentId2].dailyPassiveIncome);
-     if(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((20 * Investors2[investmentId2].day)))
+   uint256 dayscounter = 0;
+     while(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((86400  * Investors2[investmentId2].day)))
      {
-         releasePasiveIncome(investmentId2);
+    dayscounter ++;
+    Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
+    if(Investors2[investmentId2].day == 365)
+    {
+        totalSupply = totalSupply.add(Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter) );
+        balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
+        balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter) );
+        Investors2[investmentId2].spent2 = true;
+        Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
+        emit Transfer(address(0),msg.sender , Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
+        emit Spent(msg.sender, Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
+        return true;
+    }
+    
+    
      }
+     totalSupply = totalSupply.add(Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
+    balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
+    balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
+    emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
+    emit Spent(msg.sender, Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
     return true;
 }
     function getDiscountOnBuy(uint256 tokensAmount) public returns (uint256 discount) {
