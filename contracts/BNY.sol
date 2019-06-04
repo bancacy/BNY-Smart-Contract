@@ -161,7 +161,7 @@ contract BNY   {
             totalSupply = totalSupply.sub(_amount);
             
              
-            emit Deposit(msg.sender, _amount,investorIndex,Investors[investorIndex].investmentuUnlocktime,"Short");
+            emit Deposit(msg.sender, _amount,investorIndex,block.timestamp.add(_unlockTime),"SHORT-TERM");
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalinvestmentafterinterest.sub(_amount));
             return (investorIndex);
@@ -178,7 +178,7 @@ contract BNY   {
             totalSupply = totalSupply.sub(_amount);
 
             
-            emit Deposit(msg.sender, _amount,investorIndex,Investors[investorIndex].investmentuUnlocktime,"Mid");
+            emit Deposit(msg.sender, _amount,investorIndex,block.timestamp.add(_unlockTime),"MID-TERM");
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalinvestmentafterinterest.sub(_amount));
             return (investorIndex);
@@ -195,7 +195,7 @@ contract BNY   {
             totalSupply = totalSupply.sub(_amount);
 
             
-            emit Deposit(msg.sender, _amount,investorIndex,Investors[investorIndex].investmentuUnlocktime,"Long");
+            emit Deposit(msg.sender, _amount,investorIndex,block.timestamp.add(_unlockTime),"LONG-TERM");
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalinvestmentafterinterest.sub(_amount));
             return (investorIndex);
@@ -229,14 +229,14 @@ contract BNY   {
         require(_amount >= minForPassive,"Investment amount should be bigger than 12M");
         
         uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
-        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((86400  * 365)),1,false);
+        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((2 * 365)),1,false);
        investor2Index = investor2Index.add(1);
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
         balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
         totalSupply = totalSupply.sub(_amount);
         emit Transfer(msg.sender,address(0),_amount);
         emit Transfer(address(0),address(0),interestOnInvestment.mul(365));
-        emit Deposit2(msg.sender, _amount,investor2Index,Investors2[investor2Index].investmentuUnlocktime2,Investors2[investor2Index].dailyPassiveIncome,Investors2[investor2Index].investmentTimeStamp);
+        emit Deposit2(msg.sender, _amount,investor2Index,block.timestamp.add((2 * 365)),Investors2[investor2Index].dailyPassiveIncome,Investors2[investor2Index].investmentTimeStamp);
         return investor2Index;
 
     }
@@ -256,7 +256,7 @@ contract BNY   {
     function releasePasiveIncome(uint256 investmentId2) public returns (bool success) {
     require(Investors2[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
     require(Investors2[investmentId2].spent2 == false, "The investment is already spent");
-    require(Investors2[investmentId2].investmentTimeStamp.add((86400  * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
+    require(Investors2[investmentId2].investmentTimeStamp.add((2 * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
     require(Investors2[investmentId2].day < 366 , "The investment is already spent");
 
     
@@ -279,7 +279,7 @@ contract BNY   {
     emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome);
     emit Spent(msg.sender, Investors2[investmentId2].dailyPassiveIncome);
    uint256 dayscounter = 0;
-     while(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((86400  * Investors2[investmentId2].day)))
+     while(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((2 * Investors2[investmentId2].day)))
      {
     dayscounter ++;
     Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
