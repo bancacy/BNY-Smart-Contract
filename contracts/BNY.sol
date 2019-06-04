@@ -22,7 +22,7 @@ contract BNY   {
     uint256 public minForPassive = 12000000*(10 ** uint256(decimals));
     uint256 public tokensForSale = 227700000*(10 ** uint256(decimals)) ;
     uint256 public tokensSold = 1*(10 ** uint256(decimals) );
-    uint256 public tokenPrice = 306000; 
+    uint256 public tokenPrice = 206000; 
     uint256 public Precent = 1000000000;
     address payable public fundsWallet = 0xBBEC42081d39c0cCB501BDf4D54CA31b076a4703;
     struct Investment {
@@ -58,12 +58,17 @@ contract BNY   {
     event Deposit(
         address indexed _investor,
         uint256 _investmentValue,
-        uint256 _ID
+        uint256 _ID,
+        uint256 _unlocktime,
+        string _investmentTerm
     );
     event Deposit2(
         address indexed _investor2,
         uint256 _investmentValue2,
-        uint256 _ID
+        uint256 _ID2,
+        uint256 _unlocktime2,
+        uint256 _dailyIncome,
+        uint256 _investmentTime
     );
 
     event Spent(
@@ -156,7 +161,7 @@ contract BNY   {
             totalSupply = totalSupply.sub(_amount);
             
              
-            emit Deposit(msg.sender, _amount,investorIndex);
+            emit Deposit(msg.sender, _amount,investorIndex,Investors[investorIndex].investmentuUnlocktime,"Short");
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalinvestmentafterinterest.sub(_amount));
             return (investorIndex);
@@ -173,7 +178,7 @@ contract BNY   {
             totalSupply = totalSupply.sub(_amount);
 
             
-            emit Deposit(msg.sender, _amount,investorIndex);
+            emit Deposit(msg.sender, _amount,investorIndex,Investors[investorIndex].investmentuUnlocktime,"Mid");
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalinvestmentafterinterest.sub(_amount));
             return (investorIndex);
@@ -190,7 +195,7 @@ contract BNY   {
             totalSupply = totalSupply.sub(_amount);
 
             
-            emit Deposit(msg.sender, _amount,investorIndex);
+            emit Deposit(msg.sender, _amount,investorIndex,Investors[investorIndex].investmentuUnlocktime,"Long");
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalinvestmentafterinterest.sub(_amount));
             return (investorIndex);
@@ -225,14 +230,14 @@ contract BNY   {
         require(_amount > 0,"Investment amount should be bigger than 0");
         
         uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
-        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((86400 * 365)),1,false);
+        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((20 * 365)),1,false);
        investor2Index = investor2Index.add(1);
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
         balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
         totalSupply = totalSupply.sub(_amount);
         emit Transfer(msg.sender,address(0),_amount);
         emit Transfer(address(0),address(0),interestOnInvestment.mul(365));
-        emit Deposit2(msg.sender, _amount,investor2Index);
+        emit Deposit2(msg.sender, _amount,investor2Index,Investors2[investor2Index].investmentuUnlocktime2,Investors2[investor2Index].dailyPassiveIncome,Investors2[investor2Index].investmentTimeStamp);
         return investor2Index;
 
     }
@@ -252,7 +257,7 @@ contract BNY   {
     function releasePasiveIncome(uint256 investmentId2) public returns (bool success) {
     require(Investors2[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
     require(Investors2[investmentId2].spent2 == false, "The investment is already spent");
-    require(Investors2[investmentId2].investmentTimeStamp.add((86400 * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
+    require(Investors2[investmentId2].investmentTimeStamp.add((20 * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
     require(Investors2[investmentId2].day < 366 , "The investment is already spent");
 
     
@@ -274,7 +279,7 @@ contract BNY   {
     Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
     emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome);
     emit Spent(msg.sender, Investors2[investmentId2].dailyPassiveIncome);
-     if(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((86400 * Investors2[investmentId2].day)))
+     if(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((20 * Investors2[investmentId2].day)))
      {
          releasePasiveIncome(investmentId2);
      }
