@@ -279,12 +279,15 @@ contract BNY   {
     emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome);
     emit Spent2(msg.sender, Investors2[investmentId2].dailyPassiveIncome);
    uint256 dayscounter = 0;
-     while(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((2 * Investors2[investmentId2].day)))
+   uint256 dayscheacker = Investors2[investmentId2].day;
+     while(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((2 * dayscheacker)))
      {
     dayscounter ++;
-    Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
-    if(Investors2[investmentId2].day == 365)
+    dayscheacker ++;
+    
+    if(dayscheacker == 365)
     {
+       
         totalSupply = totalSupply.add(Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter) );
         balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
         balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter) );
@@ -297,6 +300,7 @@ contract BNY   {
     
     
      }
+     Investors2[investmentId2].day = Investors2[investmentId2].day.add(dayscheacker.sub(Investors2[investmentId2].day));
      totalSupply = totalSupply.add(Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
     balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
     balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
