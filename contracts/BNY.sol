@@ -316,7 +316,7 @@ contract BNY   {
 
     function () payable external{
 
-        require(tokensSold < 227700000*(10 ** uint256(decimals)), "All tokens are sold");
+        require(tokensSold < tokensForSale, "All tokens are sold");
        
 
         uint256 eth = msg.value;
