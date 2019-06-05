@@ -15,16 +15,21 @@ contract BNY   {
     uint256 public totalSupply;
     uint256 public totalinvestmentafterinterest;
     uint256 public investorIndex = 1;
-    uint256 public investor2Index = 1;
+    uint256 public passiveInvestorIndex = 1;
     uint256 public interestRate = 16;
     uint256 public multiplicationForMidTerm  = 5;
     uint256 public multiplicationForLongTerm = 20;
     uint256 public minForPassive = 12000000*(10 ** uint256(decimals));
-    uint256 public tokensForSale = 227700000*(10 ** uint256(decimals)) ;
+    uint256 public tokensForSale = 227700000*(10 ** uint256(decimals));
     uint256 public tokensSold = 1*(10 ** uint256(decimals) );
     uint256 public tokenPrice = 306000; 
     uint256 public Precent = 1000000000;
-    address payable public fundsWallet = 0xBBEC42081d39c0cCB501BDf4D54CA31b076a4703;
+    uint256 internal week = 604800;
+    uint256 internal month = 2419200;
+    uint256 internal quarter = 7257600;
+    uint256 internal year = 0;
+    uint256 _startSupply = 762300000 *(10 ** uint256(decimals));
+    address public fundsWallet;
     struct Investment {
         address investorAddress;
         uint256 investedAmount;
@@ -43,24 +48,23 @@ contract BNY   {
     }   
 
     mapping(uint256 => Investment) private Investors;
-    mapping(uint256 => passiveIncome) private Investors2;
+    mapping(uint256 => passiveIncome) private PassiveInvestors;
 
 
-    constructor ()  public {
-         totalSupply = 762300000*(10 ** uint256(decimals));
-        balanceOf[msg.sender] = 762300000*(10 ** uint256(decimals));
+    constructor (address payable _fundsWallet)  public {
+        totalSupply = _startSupply;
+        balanceOf[msg.sender] = _startSupply;
         balanceOf[address(0)] = 0;
-        emit Transfer(address(0),msg.sender,762300000*((10**uint256(decimals))));
-      
+        emit Transfer(address(0),msg.sender,_startSupply);
+        fundsWallet = _fundsWallet;
     }
    
-
     event Deposit(
         address indexed _investor,
         uint256 _investmentValue,
         uint256 _ID
     );
-    event Deposit2(
+    event PassiveDeposit(
         address indexed _investor2,
         uint256 _investmentValue2,
         uint256 _ID
@@ -140,11 +144,11 @@ contract BNY   {
     function investment(uint256 _unlockTime,uint256 _amount,uint term123) public returns (uint256) {
         require(balanceOf[msg.sender] >= _amount,"You dont have sufficent amount of tokens");
         require(_amount > 0,"Investment amount should be bigger than 0");
-        require(_unlockTime >= 604800 && (_unlockTime.mod(604800)) == 0, "Wrong investment time");
+        require(_unlockTime >= week && (_unlockTime.mod(week)) == 0, "Wrong investment time");
 
           
 
-        uint256 termAfter = (_unlockTime.div(604800));
+        uint256 termAfter = (_unlockTime.div(week));
         if((termAfter >= 1) && (termAfter <= 48) && (term123 == 1))
         {
             investmentTerm = "short";
@@ -162,8 +166,8 @@ contract BNY   {
             return (investorIndex);
         }
 
-        if((_unlockTime >= 2419200) && (term123 == 2) && (termAfter <= 12 ) && (_unlockTime.mod(2419200)) == 0){
-            termAfter = (_unlockTime.div(2419200));
+        if((_unlockTime >= month) && (term123 == 2) && (termAfter <= 12 ) && (_unlockTime.mod(month)) == 0){
+            termAfter = (_unlockTime.div(month));
             investmentTerm = "mid";
             totalinvestmentafterinterest = _amount.add(((getInterestrate(_amount,multiplicationForMidTerm).mul(termAfter)) ));
             Investors[investorIndex] = Investment(msg.sender,totalinvestmentafterinterest,block.timestamp.add(_unlockTime),false,investmentTerm);
@@ -225,61 +229,64 @@ contract BNY   {
         require(_amount > 0,"Investment amount should be bigger than 0");
         
         uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
-        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((86400 * 365)),1,false);
-       investor2Index = investor2Index.add(1);
+        passiveInvestors[passiveInvestorIndex] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((day * 365)),1,false);
+        passiveInvestorIndex++;
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
         balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
         totalSupply = totalSupply.sub(_amount);
         emit Transfer(msg.sender,address(0),_amount);
         emit Transfer(address(0),address(0),interestOnInvestment.mul(365));
-        emit Deposit2(msg.sender, _amount,investor2Index);
-        return investor2Index;
+        emit Deposit2(msg.sender, _amount,passiveInvestorIndex);
+        return passiveInvestorIndex;
 
     }
     function getPasiveIncomeDay(uint256 pasiveincomeID) public view returns (uint256) {   
-        return(Investors2[pasiveincomeID].day);
+        return(passiveInvestors[pasiveincomeID].day);
     }
     function getPasiveIncomeAmount(uint256 pasiveincomeID) public view returns (uint256) {
-        return(Investors2[pasiveincomeID].investedAmount2);
+        return(passiveInvestors[pasiveincomeID].investedAmount2);
     }
     function getPasiveIncomeUnlockTime(uint256 pasiveincomeID) public view returns (uint256) {
-        return(Investors2[pasiveincomeID].investmentuUnlocktime2);
+        return(passiveInvestors[pasiveincomeID].investmentuUnlocktime2);
     }
     function PassiveIncomeStatus(uint256 ID) public returns (bool) { 
-        return (Investors2[ID].spent2);
+        return (passiveInvestors[ID].spent2);
     }
  
     function releasePasiveIncome(uint256 investmentId2) public returns (bool success) {
-    require(Investors2[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
-    require(Investors2[investmentId2].spent2 == false, "The investment is already spent");
-    require(Investors2[investmentId2].investmentTimeStamp.add((86400 * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
-    require(Investors2[investmentId2].day < 366 , "The investment is already spent");
+        require(passiveInvestors[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
+        require(passiveInvestors[investmentId2].spent2 == false, "The investment is already spent");
+        require(passiveInvestors[investmentId2].investmentTimeStamp.add((86400 * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
+        require(passiveInvestors[investmentId2].day < 366 , "The investment is already spent");
 
     
-    totalSupply = totalSupply.add(Investors2[investmentId2].dailyPassiveIncome);
-    balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].dailyPassiveIncome);
-    balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].dailyPassiveIncome);
-    if(Investors2[investmentId2].day == 365)
-    {
-        totalSupply = totalSupply.add(Investors2[investmentId2].investedAmount2);
-        balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].investedAmount2);
-        balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].investedAmount2);
-        Investors2[investmentId2].spent2 = true;
-        Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
-        emit Transfer(address(0),msg.sender , Investors2[investmentId2].investedAmount2);
-        emit Spent(msg.sender, Investors2[investmentId2].investedAmount2);
-        return true;
-    }
+        totalSupply = totalSupply.add(passiveInvestors[investmentId2].dailyPassiveIncome);
+        emit Transfer(address(0),msg.sender, passiveInvestors[investmentId2].dailyPassiveIncome);
+
+        balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].dailyPassiveIncome);
+        balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].dailyPassiveIncome);
+        
+        if(passiveInvestors[investmentId2].day == 365)
+        {
+            totalSupply = totalSupply.add(passiveInvestors[investmentId2].investedAmount2);
+            balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].investedAmount2);
+            balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].investedAmount2);
+            passiveInvestors[investmentId2].spent2 = true;
+            passiveInvestors[investmentId2].day++;
+            emit Transfer(address(0),msg.sender , passiveInvestors[investmentId2].investedAmount2);
+            emit Spent(msg.sender, passiveInvestors[investmentId2].investedAmount2);
+            return true;
+        }
     
-    Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
-    emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome);
-    emit Spent(msg.sender, Investors2[investmentId2].dailyPassiveIncome);
-     if(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((86400 * Investors2[investmentId2].day)))
-     {
-         releasePasiveIncome(investmentId2);
-     }
-    return true;
-}
+        passiveInvestors[investmentId2].day++;
+        
+        emit Spent(msg.sender, passiveInvestors[investmentId2].dailyPassiveIncome);
+        if(block.timestamp >= passiveInvestors[investmentId2].investmentTimeStamp.add((day * passiveInvestors[investmentId2].day)))
+        {
+            releasePasiveIncome(investmentId2);
+        }
+        return true;
+    } 
     function getDiscountOnBuy(uint256 tokensAmount) public returns (uint256 discount) {
     
         uint256 tokensSoldADJ = tokensSold.mul(1000000000);
@@ -292,14 +299,14 @@ contract BNY   {
 
     function () payable external{
 
-        require(tokensSold < 227700000*(10 ** uint256(decimals)), "All tokens are sold");
+        require(tokensSold < _startSupply), "All tokens are sold");
        
 
         uint256 eth = msg.value;
         uint256 tokens = eth.mul(tokenPrice);
         uint256 bounosTokens = getDiscountOnBuy(tokens);
 
-        require(bounosTokens.add(tokens) <= ((227700000*(10 ** uint256(decimals)))).sub(tokensSold), "All tokens are sold");
+        require(bounosTokens.add(tokens) <= (_startSupply).sub(_startSupply), "All tokens are sold");
 
         tokensSold = tokensSold.add((tokens.add(bounosTokens)));
         totalSupply = totalSupply.add((tokens.add(bounosTokens)));

@@ -5,7 +5,7 @@ import "../validation/TimedCrowdsale.sol";
 
 /**
  * @title FinalizableCrowdsale
- * @dev Extension of Crowdsale with a one-off finalization action, where one
+ * @dev Extension of TimedCrowdsale with a one-off finalization action, where one
  * can do extra work after finishing.
  */
 contract FinalizableCrowdsale is TimedCrowdsale {
@@ -31,8 +31,8 @@ contract FinalizableCrowdsale is TimedCrowdsale {
      * work. Calls the contract's finalization function.
      */
     function finalize() public {
-        require(!_finalized);
-        require(hasClosed());
+        require(!_finalized, "FinalizableCrowdsale: already finalized");
+        require(hasClosed(), "FinalizableCrowdsale: not closed");
 
         _finalized = true;
 
