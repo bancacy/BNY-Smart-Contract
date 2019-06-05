@@ -271,13 +271,13 @@ contract BNY   {
         Investors2[investmentId2].spent2 = true;
         Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
         emit Transfer(address(0),msg.sender , Investors2[investmentId2].investedAmount2);
-        emit Spent(msg.sender, Investors2[investmentId2].investedAmount2);
+        emit Spent2(msg.sender, Investors2[investmentId2].investedAmount2);
         return true;
     }
     
     Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
     emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome);
-    emit Spent(msg.sender, Investors2[investmentId2].dailyPassiveIncome);
+    emit Spent2(msg.sender, Investors2[investmentId2].dailyPassiveIncome);
    uint256 dayscounter = 0;
      while(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((2 * Investors2[investmentId2].day)))
      {
@@ -291,7 +291,7 @@ contract BNY   {
         Investors2[investmentId2].spent2 = true;
         Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
         emit Transfer(address(0),msg.sender , Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
-        emit Spent(msg.sender, Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
+        emit Spent2(msg.sender, Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
         return true;
     }
     
@@ -301,7 +301,7 @@ contract BNY   {
     balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
     balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
     emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
-    emit Spent(msg.sender, Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
+    emit Spent2(msg.sender, Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
     return true;
 }
     function getDiscountOnBuy(uint256 tokensAmount) public returns (uint256 discount) {
