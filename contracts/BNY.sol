@@ -19,12 +19,22 @@ contract BNY   {
     uint256 public interestRate = 16;
     uint256 public multiplicationForMidTerm  = 5;
     uint256 public multiplicationForLongTerm = 20;
-    uint256 public minForPassive = 12000000*(10 ** uint256(decimals));
+    uint256 public minForPassive = 1200000*(10 ** uint256(decimals));
     uint256 public tokensForSale = 227700000*(10 ** uint256(decimals)) ;
     uint256 public tokensSold = 1*(10 ** uint256(decimals) );
     uint256 public tokenPrice = 206000; 
     uint256 public Precent = 1000000000;
-    address payable public fundsWallet = 0xBBEC42081d39c0cCB501BDf4D54CA31b076a4703;
+
+    uint256 internal dayseconds = 86400;
+    uint256 internal week = 604800;
+    uint256 internal month = 2419200;
+    uint256 internal quarter = 7257600;
+    uint256 internal year = 31536000;
+    uint256 internal _startSupply = 762300000 * (10 ** uint256(decimals));
+
+    address payable public fundsWallet;
+    address internal BNY_DATA = 0x428E469108D69d7929bf5B7e1715e5884B227Ce6;
+
     struct Investment {
         address investorAddress;
         uint256 investedAmount;
@@ -32,7 +42,7 @@ contract BNY   {
         bool spent;
         string term;
     }
-    struct passiveIncome {
+    struct PassiveIncome {
         address investorAddress2;
         uint256 investedAmount2;
         uint256 dailyPassiveIncome;
@@ -43,14 +53,25 @@ contract BNY   {
     }   
 
     mapping(uint256 => Investment) private Investors;
-    mapping(uint256 => passiveIncome) private Investors2;
+    mapping(uint256 => PassiveIncome) private passiveInvestors;
 
 
-    constructor ()  public {
-         totalSupply = 762300000*(10 ** uint256(decimals));
-        balanceOf[msg.sender] = 762300000*(10 ** uint256(decimals));
+    constructor (address payable _fundsWallet)  public {
+        // TESTNET Overrides
+        dayseconds = 2;// 2 seconds
+        week = 6048; // 100.8 minutes
+        month = 24192; // 403.2 minutes /  6.72 hours
+        quarter = 72576; // 0.84 days / 20.16 hours
+        year = 315360;// 3.65 days
+        minForPassive = 12000 * (10 ** uint256(decimals));
+        tokenPrice = 100000000;
+        ////////////////////////////////////
+
+        totalSupply = _startSupply;
+        balanceOf[msg.sender] = _startSupply;
         balanceOf[address(0)] = 0;
-        emit Transfer(address(0),msg.sender,762300000*((10**uint256(decimals))));
+        emit Transfer(address(0),msg.sender,_startSupply);
+        fundsWallet = _fundsWallet;
       
     }
    
@@ -62,7 +83,7 @@ contract BNY   {
         uint256 _unlocktime,
         string _investmentTerm
     );
-    event Deposit2(
+    event PassiveDeposit(
         address indexed _investor2,
         uint256 _investmentValue2,
         uint256 _ID2,
@@ -75,7 +96,7 @@ contract BNY   {
         address indexed _acclaimer,
         uint256 indexed _amout
     );
-    event Spent2(
+    event PassiveSpent(
         address indexed _acclaimer2,
         uint256 indexed _amout2
     );
@@ -229,58 +250,58 @@ contract BNY   {
         require(_amount >= minForPassive,"Investment amount should be bigger than 12M");
         
         uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
-        Investors2[investor2Index] = passiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((2 * 365)),1,false);
+        passiveInvestors[investor2Index] = PassiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((2 * 365)),1,false);
        investor2Index = investor2Index.add(1);
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
         balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
         totalSupply = totalSupply.sub(_amount);
         emit Transfer(msg.sender,address(0),_amount);
         emit Transfer(address(0),address(0),interestOnInvestment.mul(365));
-        emit Deposit2(msg.sender, _amount,investor2Index,block.timestamp.add((2 * 365)),Investors2[investor2Index].dailyPassiveIncome,Investors2[investor2Index].investmentTimeStamp);
+        emit PassiveDeposit(msg.sender, _amount,investor2Index,block.timestamp.add((2 * 365)),passiveInvestors[investor2Index].dailyPassiveIncome,passiveInvestors[investor2Index].investmentTimeStamp);
         return investor2Index;
 
     }
     function getPasiveIncomeDay(uint256 pasiveincomeID) public view returns (uint256) {   
-        return(Investors2[pasiveincomeID].day);
+        return(passiveInvestors[pasiveincomeID].day);
     }
     function getPasiveIncomeAmount(uint256 pasiveincomeID) public view returns (uint256) {
-        return(Investors2[pasiveincomeID].investedAmount2);
+        return(passiveInvestors[pasiveincomeID].investedAmount2);
     }
     function getPasiveIncomeUnlockTime(uint256 pasiveincomeID) public view returns (uint256) {
-        return(Investors2[pasiveincomeID].investmentuUnlocktime2);
+        return(passiveInvestors[pasiveincomeID].investmentuUnlocktime2);
     }
     function PassiveIncomeStatus(uint256 ID) public returns (bool) { 
-        return (Investors2[ID].spent2);
+        return (passiveInvestors[ID].spent2);
     }
  
     function releasePasiveIncome(uint256 investmentId2) public returns (bool success) {
-    require(Investors2[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
-    require(Investors2[investmentId2].spent2 == false, "The investment is already spent");
-    require(Investors2[investmentId2].investmentTimeStamp.add((2 * Investors2[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
-    require(Investors2[investmentId2].day < 366 , "The investment is already spent");
+    require(passiveInvestors[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
+    require(passiveInvestors[investmentId2].spent2 == false, "The investment is already spent");
+    require(passiveInvestors[investmentId2].investmentTimeStamp.add((2 * passiveInvestors[investmentId2].day)) < block.timestamp  , "Unlock time for the investment did not pass");
+    require(passiveInvestors[investmentId2].day < 366 , "The investment is already spent");
 
     
-    totalSupply = totalSupply.add(Investors2[investmentId2].dailyPassiveIncome);
-    balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].dailyPassiveIncome);
-    balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].dailyPassiveIncome);
-    if(Investors2[investmentId2].day == 365)
+    totalSupply = totalSupply.add(passiveInvestors[investmentId2].dailyPassiveIncome);
+    balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].dailyPassiveIncome);
+    balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].dailyPassiveIncome);
+    if(passiveInvestors[investmentId2].day == 365)
     {
-        totalSupply = totalSupply.add(Investors2[investmentId2].investedAmount2);
-        balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].investedAmount2);
-        balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].investedAmount2);
-        Investors2[investmentId2].spent2 = true;
-        Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
-        emit Transfer(address(0),msg.sender , Investors2[investmentId2].investedAmount2);
-        emit Spent2(msg.sender, Investors2[investmentId2].investedAmount2);
+        totalSupply = totalSupply.add(passiveInvestors[investmentId2].investedAmount2);
+        balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].investedAmount2);
+        balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].investedAmount2);
+        passiveInvestors[investmentId2].spent2 = true;
+        passiveInvestors[investmentId2].day = passiveInvestors[investmentId2].day.add(1);
+        emit Transfer(address(0),msg.sender , passiveInvestors[investmentId2].investedAmount2);
+        emit PassiveSpent(msg.sender, passiveInvestors[investmentId2].investedAmount2);
         return true;
     }
     
-    Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
-    emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome);
-    emit Spent2(msg.sender, Investors2[investmentId2].dailyPassiveIncome);
+    passiveInvestors[investmentId2].day = passiveInvestors[investmentId2].day.add(1);
+    emit Transfer(address(0),msg.sender,passiveInvestors[investmentId2].dailyPassiveIncome);
+    emit PassiveSpent(msg.sender, passiveInvestors[investmentId2].dailyPassiveIncome);
    uint256 dayscounter = 0;
-   uint256 dayscheacker = Investors2[investmentId2].day;
-     while(block.timestamp >= Investors2[investmentId2].investmentTimeStamp.add((2 * dayscheacker)))
+   uint256 dayscheacker = passiveInvestors[investmentId2].day;
+     while(block.timestamp >= passiveInvestors[investmentId2].investmentTimeStamp.add((2 * dayscheacker)))
      {
     dayscounter ++;
     dayscheacker ++;
@@ -288,24 +309,24 @@ contract BNY   {
     if(dayscheacker == 365)
     {
        
-        totalSupply = totalSupply.add(Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter) );
-        balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
-        balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter) );
-        Investors2[investmentId2].spent2 = true;
-        Investors2[investmentId2].day = Investors2[investmentId2].day.add(1);
-        emit Transfer(address(0),msg.sender , Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
-        emit Spent2(msg.sender, Investors2[investmentId2].investedAmount2 + Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
+        totalSupply = totalSupply.add(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter) );
+        balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
+        balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter) );
+        passiveInvestors[investmentId2].spent2 = true;
+        passiveInvestors[investmentId2].day = passiveInvestors[investmentId2].day.add(1);
+        emit Transfer(address(0),msg.sender , passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
+        emit PassiveSpent(msg.sender, passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
         return true;
     }
     
     
      }
-     Investors2[investmentId2].day = Investors2[investmentId2].day.add(dayscheacker.sub(Investors2[investmentId2].day));
-     totalSupply = totalSupply.add(Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
-    balanceOf[address(0)] = balanceOf[address(0)].sub(Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
-    balanceOf[msg.sender] = balanceOf[msg.sender].add(Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
-    emit Transfer(address(0),msg.sender,Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
-    emit Spent2(msg.sender, Investors2[investmentId2].dailyPassiveIncome.mul(dayscounter));
+     passiveInvestors[investmentId2].day = passiveInvestors[investmentId2].day.add(dayscheacker.sub(passiveInvestors[investmentId2].day));
+     totalSupply = totalSupply.add(passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
+    balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
+    balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
+    emit Transfer(address(0),msg.sender,passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
+    emit PassiveSpent(msg.sender, passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
     return true;
 }
     function getDiscountOnBuy(uint256 tokensAmount) public returns (uint256 discount) {
@@ -318,16 +339,15 @@ contract BNY   {
      return((DiscountofTokens).div(10000000000000));
     }
 
-    function () payable external{
+    function () external payable{
 
         require(tokensSold < tokensForSale, "All tokens are sold");
-       
 
         uint256 eth = msg.value;
         uint256 tokens = eth.mul(tokenPrice);
         uint256 bounosTokens = getDiscountOnBuy(tokens);
 
-        require(bounosTokens.add(tokens) <= ((227700000*(10 ** uint256(decimals)))).sub(tokensSold), "All tokens are sold");
+        require(bounosTokens.add(tokens) <= (_startSupply).sub(tokensSold), "All tokens are sold");
 
         tokensSold = tokensSold.add((tokens.add(bounosTokens)));
         totalSupply = totalSupply.add((tokens.add(bounosTokens)));
@@ -337,19 +357,18 @@ contract BNY   {
 
     }
 
-
     function futureAddressCalc(address _origin, uint _nonce) public pure returns (address) {
         if(_nonce == 0x00)     return address(uint160(uint256((keccak256(abi.encodePacked(byte(0xd6), byte(0x94), _origin, byte(0x80)))))));
         if(_nonce <= 0x7f)    return address(uint160(uint256((keccak256(abi.encodePacked(byte(0xd6), byte(0x94), _origin, byte(uint8(_nonce))))))));
         if(_nonce <= 0xff)     return address(uint160(uint256((keccak256(abi.encodePacked(byte(0xd7), byte(0x94), _origin, byte(0x81), uint8(_nonce)))))));
         if(_nonce <= 0xffff)   return address(uint160(uint256((keccak256(abi.encodePacked(byte(0xd8), byte(0x94), _origin, byte(0x82), uint16(_nonce)))))));
         if(_nonce <= 0xffffff) return address(uint160(uint256((keccak256(abi.encodePacked(byte(0xd9), byte(0x94), _origin, byte(0x83), uint24(_nonce)))))));
-        
     }
 
+  
 
     function reduceBNY(address user,uint256 value) public returns (bool success) {
-        require(msg.sender == 0x428E469108D69d7929bf5B7e1715e5884B227Ce6,"No Premission");
+        require(msg.sender == BNY_DATA,"No Premission");
         require(balanceOf[user] >= value, "User have incufficent balance");
 
         balanceOf[user] = balanceOf[user].sub(value);
@@ -360,7 +379,7 @@ contract BNY   {
         return true;
     }
     function increaseBNY(address user,uint256 value) public returns (bool success) {
-        require(msg.sender == 0x428E469108D69d7929bf5B7e1715e5884B227Ce6,"No Premission");
+        require(msg.sender == BNY_DATA,"No Premission");
         
 
         balanceOf[user] = balanceOf[user].add(value);
@@ -371,7 +390,7 @@ contract BNY   {
         return true;
     }
     function GetbalanceOf(address user) public returns (uint256 balance) {
-        require(msg.sender == 0x428E469108D69d7929bf5B7e1715e5884B227Ce6,"No Premission");
+        require(msg.sender == BNY_DATA,"No Premission");
         
         return balanceOf[user];
     }
