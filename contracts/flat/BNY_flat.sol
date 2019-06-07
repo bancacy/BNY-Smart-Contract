@@ -111,7 +111,7 @@ contract BNY   {
     uint256 public tokensSold = 1 * (10 ** uint256(decimals));
 
     uint256 public tokensPerWei = 200000;
-    uint256 public Precent = 1000000000;
+    uint256 public Percent = 1000000000;
 
     uint256 internal dayseconds = 86400;
     uint256 internal week = 604800;
@@ -228,8 +228,8 @@ contract BNY   {
 
     function getDiscountOnBuy(uint256 tokensAmount) public view returns (uint256 discount) {
         uint256 tokensSoldADJ = tokensSold.mul(1000000000);
-        uint256 discountPrecente = tokensSoldADJ.div(tokensForSale);
-        uint256 adjustedDiscount = (Precent.sub(discountPrecente)).mul(2500);
+        uint256 discountPercentage = tokensSoldADJ.div(tokensForSale);
+        uint256 adjustedDiscount = (Percent.sub(discountPercentage)).mul(2500);
         uint256 DiscountofTokens = (adjustedDiscount.mul(tokensAmount));
         return((DiscountofTokens).div(10000000000000));
     }
@@ -237,9 +237,9 @@ contract BNY   {
     function getInterestrate(uint256 _investment,uint term) public view returns (uint256 rate) {
         require(_investment < totalSupply,"The investment is too large");
 
-        uint256 totalinvestments = balanceOf[address(0)].mul(Precent);
-        uint256 investmentsprecenteg = totalinvestments.div(totalSupply);
-        uint256 adjustedinterestrate = (Precent.sub(investmentsprecenteg)).mul(interestRate);
+        uint256 totalinvestments = balanceOf[address(0)].mul(Percent);
+        uint256 investmentsPercentage = totalinvestments.div(totalSupply);
+        uint256 adjustedinterestrate = (Percent.sub(investmentsPercentage)).mul(interestRate);
 
         uint256 interestoninvestment = (adjustedinterestrate.mul(_investment)).div(10000000000000);
 
