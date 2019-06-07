@@ -219,7 +219,7 @@ contract BNY   {
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalInvestmentAfterInterest.sub(_amount));
              investorIndex ++;
-            return (investorIndex--);
+            return (investorIndex-1);
         }
 
         if((_unlockTime >= month) && (term123 == 2) && (termAfter <= 12 ) && (_unlockTime.mod(month)) == 0){
@@ -237,7 +237,7 @@ contract BNY   {
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalInvestmentAfterInterest.sub(_amount));
             investorIndex ++;
-            return (investorIndex--);
+            return (investorIndex-1);
         }
 
         if((_unlockTime >= quarter) && (term123 == 3) && (termAfter <= 16 ) && (_unlockTime.mod(quarter) == 0)){
@@ -254,7 +254,7 @@ contract BNY   {
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalInvestmentAfterInterest.sub(_amount));
             investorIndex ++;
-            return (investorIndex--);
+            return (investorIndex-1);
         }
     }
 
@@ -300,7 +300,7 @@ contract BNY   {
         passiveInvestors[passiveInvestorIndex].investmentTimeStamp);
 
         passiveInvestorIndex++;
-        return (passiveInvestorIndex--);
+        return (passiveInvestorIndex-1);
 
     }
     function getPasiveIncomeDay(uint256 pasiveincomeID) public view returns (uint256) {
