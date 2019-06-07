@@ -365,11 +365,14 @@ contract BNY   {
 
         uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
 
-        passiveInvestors[passiveInvestorIndex] = PassiveIncome(msg.sender,_amount,
-        interestOnInvestment,
-        block.timestamp ,
-        block.timestamp.add((dayseconds * 365)),
-        1,false);
+        passiveInvestors[passiveInvestorIndex] = PassiveIncome(
+            msg.sender,
+            _amount,
+            interestOnInvestment,
+            block.timestamp,
+            block.timestamp.add((dayseconds * 365)),
+            1,
+            false);
 
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
         balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
@@ -424,8 +427,8 @@ contract BNY   {
         uint256 dayscheacker = passiveInvestors[investmentId2].day;
             while(block.timestamp >= passiveInvestors[investmentId2].investmentTimeStamp.add((dayseconds * dayscheacker)))
             {
-                dayscounter ++;
-                dayscheacker ++;
+                dayscounter++;
+                dayscheacker++;
 
                 if(dayscheacker == 365)
                 {
