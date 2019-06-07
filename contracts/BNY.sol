@@ -254,14 +254,15 @@ contract BNY   {
         
         uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
         passiveInvestors[passiveInvestorIndex] = PassiveIncome(msg.sender,_amount,interestOnInvestment,block.timestamp ,block.timestamp.add((dayseconds * 365)),1,false);
-       passiveInvestorIndex = passiveInvestorIndex.add(1);
+       
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
         balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
         totalSupply = totalSupply.sub(_amount);
         emit Transfer(msg.sender,address(0),_amount);
         emit Transfer(address(0),address(0),interestOnInvestment.mul(365));
         emit PassiveDeposit(msg.sender, _amount,passiveInvestorIndex,block.timestamp.add((dayseconds * 365)),passiveInvestors[passiveInvestorIndex].dailyPassiveIncome,passiveInvestors[passiveInvestorIndex].investmentTimeStamp);
-        return passiveInvestorIndex;
+        passiveInvestorIndex++;
+        return (passiveInvestorIndex--);
 
     }
     function getPasiveIncomeDay(uint256 pasiveincomeID) public view returns (uint256) {   
