@@ -306,12 +306,7 @@ contract BNY   {
     function getPasiveIncomeDay(uint256 pasiveincomeID) public view returns (uint256) {
         return(passiveInvestors[pasiveincomeID].day);
     }
-    function getPasiveIncomeAmount(uint256 pasiveincomeID) public view returns (uint256) {
-        return(passiveInvestors[pasiveincomeID].investedAmount2);
-    }
-    function getPasiveIncomeUnlockTime(uint256 pasiveincomeID) public view returns (uint256) {
-        return(passiveInvestors[pasiveincomeID].investmentuUnlocktime2);
-    }
+
     function PassiveIncomeStatus(uint256 ID) public view returns (bool) {
         return (passiveInvestors[ID].spent2);
     }
