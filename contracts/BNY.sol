@@ -6,7 +6,7 @@ contract BNY   {
 
     using SafeMath for uint256;
     using AddressCalc for address payable;
-  
+
     string  public name = "BANCACY";
     string  public symbol = "BNY";
     string  public standard = "BNY Token";
@@ -202,7 +202,12 @@ contract BNY   {
         {
             investmentTerm = "short";
             totalInvestmentAfterInterest = _amount.add(((getInterestrate(_amount,1).mul(termAfter))));
-            investors[investorIndex] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
+            investors[investorIndex] = Investment(
+                msg.sender,
+                totalInvestmentAfterInterest,
+                block.timestamp.add(_unlockTime),
+                false,
+                investmentTerm);
 
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
 
@@ -303,19 +308,20 @@ contract BNY   {
 
         return (passiveInvestorIndex - 1);
     }
-    function getPasiveIncomeDay(uint256 pasiveincomeID) public view returns (uint256) {
-        return(passiveInvestors[pasiveincomeID].day);
+    function getPassiveIncomeDay(uint256 passiveincomeID) public view returns (uint256) {
+        return(passiveInvestors[passiveincomeID].day);
     }
 
     function passiveIncomeStatus(uint256 ID) public view returns (bool) {
         return (passiveInvestors[ID].spent2);
     }
 
-    function releasePasiveIncome(uint256 investmentId2) public returns (bool success) {
+    function releasePassiveIncome(uint256 investmentId2) public returns (bool success) {
         require(passiveInvestors[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
         require(passiveInvestors[investmentId2].spent2 == false, "The investment is already spent");
         require(passiveInvestors[investmentId2].investmentTimeStamp.add((
-        dayseconds * passiveInvestors[investmentId2].day)) < block.timestamp,"Unlock time for the investment did not pass");
+        dayseconds * passiveInvestors[investmentId2].day)) < block.timestamp,
+        "Unlock time for the investment did not pass");
         require(passiveInvestors[investmentId2].day < 366,"The investment is already spent");
 
         totalSupply = totalSupply.add(passiveInvestors[investmentId2].dailyPassiveIncome);
@@ -337,27 +343,26 @@ contract BNY   {
         emit Transfer(address(0),msg.sender,passiveInvestors[investmentId2].dailyPassiveIncome);
         emit PassiveSpent(msg.sender, passiveInvestors[investmentId2].dailyPassiveIncome);
         uint256 dayscounter = 0;
-        uint256 dayscheacker = passiveInvestors[investmentId2].day;
-            while(block.timestamp >= passiveInvestors[investmentId2].investmentTimeStamp.add((dayseconds * dayscheacker)))
+        uint256 dayschecker = passiveInvestors[investmentId2].day;
+        while(block.timestamp >= passiveInvestors[investmentId2].investmentTimeStamp.add((dayseconds * dayschecker)))
+        {
+            dayscounter++;
+            dayschecker++;
+
+            if(dayschecker == 365)
             {
-                dayscounter++;
-                dayscheacker++;
-
-                if(dayscheacker == 365)
-                {
-                    passiveInvestors[investmentId2].spent2 = true;
-                    passiveInvestors[investmentId2].day = 366; // Force closure
-                    totalSupply = totalSupply.add(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-                    balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-                    balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-                    emit Transfer(address(0),msg.sender,passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-                    emit PassiveSpent(msg.sender, passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-                    return true;
-                }
-
-
+                passiveInvestors[investmentId2].spent2 = true;
+                passiveInvestors[investmentId2].day = 366; // Force closure
+                totalSupply = totalSupply.add(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
+                balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
+                balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
+                emit Transfer(address(0),msg.sender,passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
+                emit PassiveSpent(msg.sender, passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
+                return true;
             }
-        passiveInvestors[investmentId2].day = passiveInvestors[investmentId2].day.add(dayscheacker.sub(passiveInvestors[investmentId2].day));
+
+        }
+        passiveInvestors[investmentId2].day = passiveInvestors[investmentId2].day.add(dayschecker.sub(passiveInvestors[investmentId2].day));
         totalSupply = totalSupply.add(passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
         balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
         balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
@@ -389,7 +394,7 @@ contract BNY   {
         return true;
     }
 
-    function getbalanceOf(address user) public view returns (uint256 balance) {
+    function getBalanceOf(address user) public view returns (uint256 balance) {
         require(msg.sender == BNY_DATA, "No Permission");
         return balanceOf[user];
     }
