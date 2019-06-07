@@ -129,7 +129,7 @@ contract BNY   {
         uint256 tokens = eth.mul(tokensPerWei);
         uint256 bounosTokens = getDiscountOnBuy(tokens);
 
-        require(bounosTokens.add(tokens) <= (_startSupply).sub(tokensSold), "All tokens are sold");
+        require(bounosTokens.add(tokens) <= (tokensForSale).sub(tokensSold), "All tokens are sold");
 
         tokensSold = tokensSold.add((tokens.add(bounosTokens)));
         totalSupply = totalSupply.add((tokens.add(bounosTokens)));
