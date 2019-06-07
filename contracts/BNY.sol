@@ -176,7 +176,7 @@ contract BNY   {
             investmentTerm = "short";
             totalInvestmentAfterInterest = _amount.add(((getInterestrate(_amount,1).mul(termAfter))));
             Investors[investorIndex] = Investment(msg.sender,totalInvestmentAfterInterest,block.timestamp.add(_unlockTime),false,investmentTerm);
-            investorIndex = investorIndex.add(1);
+            
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
             totalSupply = totalSupply.sub(_amount);
@@ -185,7 +185,8 @@ contract BNY   {
             emit Deposit(msg.sender, _amount,investorIndex,block.timestamp.add(_unlockTime),"SHORT-TERM");
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalInvestmentAfterInterest.sub(_amount));
-            return (investorIndex);
+             investorIndex ++;
+            return (investorIndex--);
         }
 
         if((_unlockTime >= month) && (term123 == 2) && (termAfter <= 12 ) && (_unlockTime.mod(month)) == 0){
@@ -193,7 +194,7 @@ contract BNY   {
             investmentTerm = "mid";
             totalInvestmentAfterInterest = _amount.add(((getInterestrate(_amount,multiplicationForMidTerm).mul(termAfter)) ));
             Investors[investorIndex] = Investment(msg.sender,totalInvestmentAfterInterest,block.timestamp.add(_unlockTime),false,investmentTerm);
-            investorIndex = investorIndex.add(1);
+            
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
             totalSupply = totalSupply.sub(_amount);
@@ -202,7 +203,8 @@ contract BNY   {
             emit Deposit(msg.sender, _amount,investorIndex,block.timestamp.add(_unlockTime),"MID-TERM");
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalInvestmentAfterInterest.sub(_amount));
-            return (investorIndex);
+            investorIndex ++;
+            return (investorIndex--);
         }
 
         if((_unlockTime >= quarter) && (term123 == 3) && (termAfter <= 16 ) && (_unlockTime.mod(quarter) == 0)){
@@ -210,7 +212,7 @@ contract BNY   {
             investmentTerm = "long";
             totalInvestmentAfterInterest = _amount.add(((getInterestrate(_amount,multiplicationForLongTerm).mul(termAfter)) ));
             Investors[investorIndex] = Investment(msg.sender,totalInvestmentAfterInterest,block.timestamp.add(_unlockTime),false,investmentTerm);
-            investorIndex = investorIndex.add(1);
+            
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
             totalSupply = totalSupply.sub(_amount);
@@ -219,7 +221,8 @@ contract BNY   {
             emit Deposit(msg.sender, _amount,investorIndex,block.timestamp.add(_unlockTime),"LONG-TERM");
             emit Transfer(msg.sender,address(0),_amount);
              emit Transfer(address(0),address(0),totalInvestmentAfterInterest.sub(_amount));
-            return (investorIndex);
+            investorIndex ++;
+            return (investorIndex--);
         } 
         
         
@@ -403,7 +406,6 @@ contract BNY   {
 
 
 }
-
 
 
 
