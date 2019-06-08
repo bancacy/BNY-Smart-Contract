@@ -7,78 +7,6 @@ contract BNY   {
     using SafeMath for uint256;
     using AddressCalc for address payable;
 
-    string  public name = "BANCACY";
-    string  public symbol = "BNY";
-    string  public standard = "BNY Token";
-    uint256 public decimals = 18 ;
-    string  public investmentTerm;
-    uint256 public totalSupply;
-    uint256 public totalInvestmentAfterInterest;
-    uint256 public investorIndex = 1;
-    uint256 public passiveInvestorIndex = 1;
-    uint256 public interestRate = 16;
-    uint256 public multiplicationForMidTerm  = 5;
-    uint256 public multiplicationForLongTerm = 20;
-    uint256 public minForPassive = 12000000 * (10 ** uint256(decimals));
-    uint256 public tokensForSale = 227700000 * (10 ** uint256(decimals));
-    uint256 public tokensSold = 1 * (10 ** uint256(decimals));
-
-    uint256 public tokensPerWei = 200000;
-    uint256 public Percent = 1000000000;
-
-    uint256 internal dayseconds = 86400;
-    uint256 internal week = 604800;
-    uint256 internal month = 2419200;
-    uint256 internal quarter = 7257600;
-    uint256 internal year = 31536000;
-    uint256 internal _startSupply = 762300000 * (10 ** uint256(decimals));
-
-    address payable public fundsWallet;
-    address public XBNY;
-    address public BNY_DATA;
-
-    struct Investment {
-        address investorAddress;
-        uint256 investedAmount;
-        uint256 investmentUnlocktime;
-        bool spent;
-        string term;
-    }
-
-    struct PassiveIncome {
-        address investorAddress2;
-        uint256 investedAmount2;
-        uint256 dailyPassiveIncome;
-        uint256 investmentTimeStamp;
-        uint256 investmentUnlocktime2;
-        uint256 day;
-        bool spent2;
-    }
-
-    mapping(uint256 => Investment) private investors;
-    mapping(uint256 => PassiveIncome) private passiveInvestors;
-
-    constructor (address payable _fundsWallet)  public {
-        // TESTNET Overrides
-        dayseconds = 2;// 2 seconds
-        week = 60; // 100.8 minutes
-        month = 120; // 403.2 minutes /  6.72 hours
-        quarter = 180; // 0.84 days / 20.16 hours
-        year = 0;// 3.65 days
-        minForPassive = 12000 * (10 ** uint256(decimals));
-        tokensPerWei = 100000000;
-        ////////////////////////////////////
-
-        totalSupply = _startSupply;
-        fundsWallet = _fundsWallet;
-        balanceOf[fundsWallet] = _startSupply;
-        balanceOf[address(0)] = 0;
-        emit Transfer(address(0), fundsWallet, _startSupply);
-        XBNY = msg.sender.futureAddressCalc(1);
-        BNY_DATA = msg.sender.futureAddressCalc(2);
-
-    }
-
     event Deposit(
         address indexed _investor,
         uint256 _investmentValue,
@@ -118,8 +46,79 @@ contract BNY   {
         uint256 _value
     );
 
+    string  public name = "BANCACY";
+    string  public symbol = "BNY";
+    string  public standard = "BNY Token";
+    uint256 public decimals = 18 ;
+    string  public investmentTerm;
+    uint256 public totalSupply;
+    uint256 public totalInvestmentAfterInterest;
+    uint256 public investorIndex = 1;
+    uint256 public passiveInvestorIndex = 1;
+    uint256 public interestRate = 16;
+    uint256 public multiplicationForMidTerm  = 5;
+    uint256 public multiplicationForLongTerm = 20;
+    uint256 public minForPassive = 12000000 * (10 ** uint256(decimals));
+    uint256 public tokensForSale = 227700000 * (10 ** uint256(decimals));
+    uint256 public tokensSold = 1 * (10 ** uint256(decimals));
+
+    uint256 public tokensPerWei = 200000;
+    uint256 public Percent = 1000000000;
+
+    uint256 internal dayseconds = 86400;
+    uint256 internal week = 604800;
+    uint256 internal month = 2419200;
+    uint256 internal quarter = 7257600;
+    uint256 internal year = 31536000;
+    uint256 internal _startSupply = 762300000 * (10 ** uint256(decimals));
+
+    address payable public fundsWallet;
+    address public XBNY;
+    address public BNY_DATA;
+
+    mapping(uint256 => Investment) private investors;
+    mapping(uint256 => PassiveIncome) private passiveInvestors;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
+
+    struct Investment {
+        address investorAddress;
+        uint256 investedAmount;
+        uint256 investmentUnlocktime;
+        bool spent;
+        string term;
+    }
+
+    struct PassiveIncome {
+        address investorAddress2;
+        uint256 investedAmount2;
+        uint256 dailyPassiveIncome;
+        uint256 investmentTimeStamp;
+        uint256 investmentUnlocktime2;
+        uint256 day;
+        bool spent2;
+    }
+
+    constructor (address payable _fundsWallet)  public {
+        // TESTNET Overrides
+        dayseconds = 2;// 2 seconds
+        week = 60; // 100.8 minutes
+        month = 120; // 403.2 minutes /  6.72 hours
+        quarter = 180; // 0.84 days / 20.16 hours
+        year = 0;// 3.65 days
+        minForPassive = 12000 * (10 ** uint256(decimals));
+        tokensPerWei = 100000000;
+        ////////////////////////////////////
+
+        totalSupply = _startSupply;
+        fundsWallet = _fundsWallet;
+        balanceOf[fundsWallet] = _startSupply;
+        balanceOf[address(0)] = 0;
+        emit Transfer(address(0), fundsWallet, _startSupply);
+        XBNY = msg.sender.futureAddressCalc(1);
+        BNY_DATA = msg.sender.futureAddressCalc(2);
+
+    }
 
     function () external payable{
 
@@ -137,26 +136,6 @@ contract BNY   {
         emit Transfer(address(0),msg.sender,tokens.add(bounosTokens));
         fundsWallet.transfer(msg.value);
 
-    }
-
-    function getDiscountOnBuy(uint256 tokensAmount) public view returns (uint256 discount) {
-        uint256 tokensSoldADJ = tokensSold.mul(1000000000);
-        uint256 discountPercentage = tokensSoldADJ.div(tokensForSale);
-        uint256 adjustedDiscount = (Percent.sub(discountPercentage)).mul(2500);
-        uint256 DiscountofTokens = (adjustedDiscount.mul(tokensAmount));
-        return((DiscountofTokens).div(10000000000000));
-    }
-
-    function getInterestrate(uint256 _investment,uint term) public view returns (uint256 rate) {
-        require(_investment < totalSupply,"The investment is too large");
-
-        uint256 totalinvestments = balanceOf[address(0)].mul(Percent);
-        uint256 investmentsPercentage = totalinvestments.div(totalSupply);
-        uint256 adjustedinterestrate = (Percent.sub(investmentsPercentage)).mul(interestRate);
-
-        uint256 interestoninvestment = (adjustedinterestrate.mul(_investment)).div(10000000000000);
-
-        return (interestoninvestment.mul(term));
     }
 
     function transfer(address _to, uint256 _value) public returns (bool success) {
@@ -308,13 +287,6 @@ contract BNY   {
 
         return (passiveInvestorIndex - 1);
     }
-    function getPassiveIncomeDay(uint256 passiveincomeID) public view returns (uint256) {
-        return(passiveInvestors[passiveincomeID].day);
-    }
-
-    function passiveIncomeStatus(uint256 ID) public view returns (bool) {
-        return (passiveInvestors[ID].spent2);
-    }
 
     function releasePassiveIncome(uint256 investmentId2) public returns (bool success) {
         require(passiveInvestors[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
@@ -322,7 +294,7 @@ contract BNY   {
         require(passiveInvestors[investmentId2].investmentTimeStamp.add((
         dayseconds * passiveInvestors[investmentId2].day)) < block.timestamp,
         "Unlock time for the investment did not pass");
-        require(passiveInvestors[investmentId2].day < 366,"The investment is already spent");
+        require(passiveInvestors[investmentId2].day < 366, "The investment is already spent");
 
         totalSupply = totalSupply.add(passiveInvestors[investmentId2].dailyPassiveIncome);
         balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].dailyPassiveIncome);
@@ -349,7 +321,7 @@ contract BNY   {
             dayscounter++;
             dayschecker++;
 
-            if(dayschecker == 365)
+            if(dayschecker >= 365)
             {
                 passiveInvestors[investmentId2].spent2 = true;
                 passiveInvestors[investmentId2].day = 366; // Force closure
@@ -382,7 +354,6 @@ contract BNY   {
 
         return true;
     }
-
     function increaseBNY(address user,uint256 value) public returns (bool success) {
         require(msg.sender == BNY_DATA, "No Permission");
 
@@ -393,17 +364,66 @@ contract BNY   {
 
         return true;
     }
-
-    function getBalanceOf(address user) public view returns (uint256 balance) {
+   function getBalanceOf(address user) public view returns (uint256 balance) {
         require(msg.sender == BNY_DATA, "No Permission");
         return balanceOf[user];
     }
-
+    function getPassiveDetails (uint passiveIncomeID) public view returns (
+        address investorAddress2,
+        uint256 investedAmount2,
+        uint256 dailyPassiveIncome,
+        uint256 investmentTimeStamp,
+        uint256 investmentUnlocktime2,
+        uint256 day,
+        bool spent2
+    ){
+        return(
+            passiveInvestors[passiveIncomeID].investorAddress2,
+            passiveInvestors[passiveIncomeID].investedAmount2,
+            passiveInvestors[passiveIncomeID].dailyPassiveIncome,
+            passiveInvestors[passiveIncomeID].investmentTimeStamp,
+            passiveInvestors[passiveIncomeID].investmentUnlocktime2,
+            passiveInvestors[passiveIncomeID].day,
+            passiveInvestors[passiveIncomeID].spent2
+        );
+    }
+    function getPassiveIncomeDay(uint256 passiveincomeID) public view returns (uint256) {
+        return(passiveInvestors[passiveincomeID].day);
+    }
+    function getPassiveIncomeStatus(uint256 passiveIncomeID) public view returns (bool) {
+        return (passiveInvestors[passiveIncomeID].spent2);
+    }
+    function getPassiveInvestmentTerm(uint256 passiveIncomeID) public view returns (uint256){
+        return (passiveInvestors[passiveIncomeID].investmentUnlocktime2);
+    }
+    function getPassiveInvestmentTimeStamp(uint256 passiveIncomeID) public view returns (uint256){
+        return (passiveInvestors[passiveIncomeID].investmentTimeStamp);
+    }
     function getInvestmentStatus(uint256 ID) public view returns (bool){
         return (investors[ID].spent);
     }
-
     function getInvestmentTerm(uint256 ID) public view returns (uint256){
         return (investors[ID].investmentUnlocktime);
+    }
+    function getDiscountOnBuy(uint256 tokensAmount) public view returns (uint256 discount) {
+        uint256 tokensSoldADJ = tokensSold.mul(1000000000);
+        uint256 discountPercentage = tokensSoldADJ.div(tokensForSale);
+        uint256 adjustedDiscount = (Percent.sub(discountPercentage)).mul(2500);
+        uint256 DiscountofTokens = (adjustedDiscount.mul(tokensAmount));
+        return((DiscountofTokens).div(10000000000000));
+    }
+    function getBlockTimestamp () public view returns (uint blockTimestamp){
+        return block.timestamp;
+    }
+    function getInterestrate(uint256 _investment, uint term) public view returns (uint256 rate) {
+        require(_investment < totalSupply,"The investment is too large");
+
+        uint256 totalinvestments = balanceOf[address(0)].mul(Percent);
+        uint256 investmentsPercentage = totalinvestments.div(totalSupply);
+        uint256 adjustedinterestrate = (Percent.sub(investmentsPercentage)).mul(interestRate);
+
+        uint256 interestoninvestment = (adjustedinterestrate.mul(_investment)).div(10000000000000);
+
+        return (interestoninvestment.mul(term));
     }
 }
