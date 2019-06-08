@@ -375,59 +375,43 @@ contract BNY   {
         return (passiveInvestorIndex - 1);
     }
 
-    function releasePassiveIncome(uint256 investmentId2) public returns (bool success) {
-        require(passiveInvestors[investmentId2].investorAddress2 == msg.sender, "Only the investor can claim the investment");
-        require(passiveInvestors[investmentId2].spent2 == false, "The investment is already spent");
-        require(passiveInvestors[investmentId2].investmentTimeStamp.add((
-        dayseconds * passiveInvestors[investmentId2].day)) < block.timestamp,
+    function releasePassiveIncome(uint256 passiveIncomeID) public returns (bool success) {
+        require(passiveInvestors[passiveIncomeID].investorAddress2 == msg.sender, "Only the investor can claim the investment");
+        require(passiveInvestors[passiveIncomeID].spent2 == false, "The investment is already spent");
+        require(passiveInvestors[passiveIncomeID].investmentTimeStamp.add((
+        dayseconds * passiveInvestors[passiveIncomeID].day)) < block.timestamp,
         "Unlock time for the investment did not pass");
-        require(passiveInvestors[investmentId2].day < 366, "The investment is already spent");
+        require(passiveInvestors[passiveIncomeID].day < 366, "The investment is already spent");
+        uint totalReward;
+        uint numberOfDaysHeld = (block.timestamp - passiveInvestors[passiveIncomeID].investmentTimeStamp) / dayseconds;
 
-        totalSupply = totalSupply.add(passiveInvestors[investmentId2].dailyPassiveIncome);
-        balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].dailyPassiveIncome);
-        balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].dailyPassiveIncome);
-        if(passiveInvestors[investmentId2].day == 365)
-        {
-            passiveInvestors[investmentId2].spent2 = true;
-            passiveInvestors[investmentId2].day = 366; // Force closure
-            totalSupply = totalSupply.add(passiveInvestors[investmentId2].investedAmount2);
-            balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].investedAmount2);
-            balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].investedAmount2);
-            emit Transfer(address(0),msg.sender,passiveInvestors[investmentId2].investedAmount2);
-            emit PassiveSpent(msg.sender, passiveInvestors[investmentId2].investedAmount2);
+        if(numberOfDaysHeld > 365){
+            numberOfDaysHeld = 365;
+            totalReward = passiveInvestors[passiveIncomeID].investedAmount2;
+            passiveInvestors[passiveIncomeID].spent2 = true;
+        }
+
+        uint numberOfDaysOwed = numberOfDaysHeld - (passiveInvestors[passiveIncomeID].day - 1);
+
+        uint totalDailyPassiveIncome = passiveInvestors[passiveIncomeID].dailyPassiveIncome * numberOfDaysOwed;
+
+        passiveInvestors[passiveIncomeID].day = numberOfDaysHeld + 1;
+
+        totalReward = totalReward + totalDailyPassiveIncome;
+        if(totalReward > 0){
+            totalSupply = totalSupply.add(totalReward);
+            balanceOf[address(0)] = balanceOf[address(0)].sub(totalReward);
+            balanceOf[msg.sender] = balanceOf[msg.sender].add(totalReward);
+
+            emit Transfer(address(0), msg.sender,totalReward);
+            emit PassiveSpent(msg.sender, totalReward);
             return true;
         }
-
-        passiveInvestors[investmentId2].day++;
-        emit Transfer(address(0),msg.sender,passiveInvestors[investmentId2].dailyPassiveIncome);
-        emit PassiveSpent(msg.sender, passiveInvestors[investmentId2].dailyPassiveIncome);
-        uint256 dayscounter = 0;
-        uint256 dayschecker = passiveInvestors[investmentId2].day;
-        while(block.timestamp >= passiveInvestors[investmentId2].investmentTimeStamp.add((dayseconds * dayschecker)))
-        {
-            dayscounter++;
-            dayschecker++;
-
-            if(dayschecker >= 365)
-            {
-                passiveInvestors[investmentId2].spent2 = true;
-                passiveInvestors[investmentId2].day = 366; // Force closure
-                totalSupply = totalSupply.add(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-                balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-                balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-                emit Transfer(address(0),msg.sender,passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-                emit PassiveSpent(msg.sender, passiveInvestors[investmentId2].investedAmount2 + passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-                return true;
-            }
-
+        else{
+            revert(
+                "There is no total reward earned."
+            );
         }
-        passiveInvestors[investmentId2].day = passiveInvestors[investmentId2].day.add(dayschecker.sub(passiveInvestors[investmentId2].day));
-        totalSupply = totalSupply.add(passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-        balanceOf[address(0)] = balanceOf[address(0)].sub(passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-        balanceOf[msg.sender] = balanceOf[msg.sender].add(passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-        emit Transfer(address(0),msg.sender,passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-        emit PassiveSpent(msg.sender, passiveInvestors[investmentId2].dailyPassiveIncome.mul(dayscounter));
-        return true;
     }
 
     function reduceBNY(address user,uint256 value) public returns (bool success) {
@@ -451,7 +435,7 @@ contract BNY   {
 
         return true;
     }
-   function getBalanceOf(address user) public view returns (uint256 balance) {
+    function getBalanceOf(address user) public view returns (uint256 balance) {
         require(msg.sender == BNY_DATA, "No Permission");
         return balanceOf[user];
     }
@@ -483,6 +467,9 @@ contract BNY   {
     function getPassiveInvestmentTerm(uint256 passiveIncomeID) public view returns (uint256){
         return (passiveInvestors[passiveIncomeID].investmentUnlocktime2);
     }
+    function getPassiveNumberOfDays (uint passiveIncomeID) public view returns (uint256){
+        return (block.timestamp - passiveInvestors[passiveIncomeID].investmentTimeStamp) / dayseconds;
+    }
     function getPassiveInvestmentTimeStamp(uint256 passiveIncomeID) public view returns (uint256){
         return (passiveInvestors[passiveIncomeID].investmentTimeStamp);
     }
@@ -512,5 +499,40 @@ contract BNY   {
         uint256 interestoninvestment = (adjustedinterestrate.mul(_investment)).div(10000000000000);
 
         return (interestoninvestment.mul(term));
+    }
+    function getSimulatedDailyIncome (uint passiveIncomeID) public view returns (
+        uint _numberOfDaysHeld,
+        uint _numberOfDaysOwed,
+        uint _totalDailyPassiveIncome,
+        uint _dailyPassiveIncome,
+        uint _totalReward,
+        uint _day,
+        bool _spent
+    ){
+        _spent = false;
+        _numberOfDaysHeld = (block.timestamp - passiveInvestors[passiveIncomeID].investmentTimeStamp) / dayseconds;
+        if(_numberOfDaysHeld > 365){
+            _numberOfDaysHeld = 365;
+            _totalReward = passiveInvestors[passiveIncomeID].investedAmount2;
+            _spent = true;
+        }
+
+        _numberOfDaysOwed = _numberOfDaysHeld - (passiveInvestors[passiveIncomeID].day - 1);
+
+        _totalDailyPassiveIncome = passiveInvestors[passiveIncomeID].dailyPassiveIncome * _numberOfDaysOwed;
+
+        _day = _numberOfDaysHeld + 1;
+
+        _totalReward = _totalReward + _totalDailyPassiveIncome;
+        _dailyPassiveIncome = passiveInvestors[passiveIncomeID].dailyPassiveIncome;
+        return (
+            _numberOfDaysHeld,
+            _numberOfDaysOwed,
+            _totalDailyPassiveIncome,
+            _dailyPassiveIncome,
+            _totalReward,
+            _day,
+            _spent
+        );
     }
 }
