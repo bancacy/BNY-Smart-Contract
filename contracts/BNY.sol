@@ -226,12 +226,12 @@ contract BNY   {
         }
 
         if((_unlockTime >= quarter) && (term123 == 3) && (termAfter <= 16 ) && (_unlockTime.mod(quarter) == 0)) {
+            investorIndex++;
             termAfter = (_unlockTime.div(quarter));
             investmentTerm = "long";
             totalInvestmentAfterInterest = _amount.add(getInterestrate(_amount, multiplicationForLongTerm).mul(termAfter));
-            investors[investorIndex] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
+            investors[investorIndex--] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
             
-            investorIndex++;
             emit Deposit(msg.sender, _amount, investorIndex--, block.timestamp.add(_unlockTime), "LONG-TERM");
             emit Transfer(msg.sender, address(0), _amount);
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
