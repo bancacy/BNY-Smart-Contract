@@ -254,7 +254,6 @@ contract BNY   {
         balanceOf[address(0)] = balanceOf[address(0)].sub(investors[investmentId].investedAmount);
         balanceOf[msg.sender] = balanceOf[msg.sender].add(investors[investmentId].investedAmount);
 
-        
         emit Transfer(address(0),msg.sender, investors[investmentId].investedAmount);
         emit Spent(msg.sender, investors[investmentId].investedAmount);
         return true;
@@ -276,19 +275,22 @@ contract BNY   {
             1,
             false);
 
+        emit Transfer(msg.sender, address(0), _amount);
+        emit Transfer(address(0), address(0), interestOnInvestment.mul(365));
+
+        emit PassiveDeposit(msg.sender,
+        _amount,
+            passiveInvestorIndex,
+            block.timestamp.add((dayseconds * 365)),
+            passiveInvestors[passiveInvestorIndex].dailyPassiveIncome,
+            passiveInvestors[passiveInvestorIndex].investmentTimeStamp
+        );
+
+        passiveInvestorIndex++;
+
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
         balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
         totalSupply = totalSupply.sub(_amount);
-        emit Transfer(msg.sender,address(0),_amount);
-        emit Transfer(address(0),address(0),interestOnInvestment.mul(365));
-
-        emit PassiveDeposit(msg.sender, _amount,
-        passiveInvestorIndex,
-        block.timestamp.add((dayseconds * 365)),
-        passiveInvestors[passiveInvestorIndex].dailyPassiveIncome,
-        passiveInvestors[passiveInvestorIndex].investmentTimeStamp);
-
-        passiveInvestorIndex++;
 
         return (passiveInvestorIndex - 1);
     }
@@ -309,8 +311,6 @@ contract BNY   {
             totalReward = passiveInvestors[passiveIncomeID].investedAmount2;
         }
 
-       
-         
         uint numberOfDaysOwed = numberOfDaysHeld - (passiveInvestors[passiveIncomeID].day - 1);
 
         uint totalDailyPassiveIncome = passiveInvestors[passiveIncomeID].dailyPassiveIncome * numberOfDaysOwed;
@@ -334,7 +334,7 @@ contract BNY   {
     }
 
     function BNY_AssetSolidification(address user,uint256 value) public returns (bool success) {
-        require(msg.sender == BNY_DATA,"No Premission");
+        require(msg.sender == BNY_DATA, "No Permission");
         require(balanceOf[user] >= value, "User have incufficent balance");
 
         balanceOf[user] = balanceOf[user].sub(value);
