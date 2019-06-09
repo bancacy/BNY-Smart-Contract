@@ -215,6 +215,7 @@ contract BNY   {
             emit Deposit(msg.sender, _amount, investorIndex, block.timestamp.add(_unlockTime), "MID-TERM");
             emit Transfer(msg.sender, address(0), _amount);
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
+
             investorIndex++;
 
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
@@ -234,11 +235,12 @@ contract BNY   {
             emit Transfer(msg.sender, address(0), _amount);
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
 
+            investorIndex++;
+
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
             totalSupply = totalSupply.sub(_amount);
 
-            investorIndex++;
             return (investorIndex - 1);
         }
     }
