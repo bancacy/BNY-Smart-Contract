@@ -123,18 +123,18 @@ contract BNY   {
     function () external payable{
 
         require(tokensSold < tokensForSale, "All tokens are sold");
-        
+        require(msg.value > 0, "Value must be > 0");
         uint256 eth = msg.value;
         uint256 tokens = eth.mul(tokensPerWei);
         uint256 bounosTokens = getDiscountOnBuy(tokens);
 
         require(bounosTokens.add(tokens) <= (tokensForSale).sub(tokensSold), "All tokens are sold");
-
+        fundsWallet.transfer(msg.value);
         tokensSold = tokensSold.add((tokens.add(bounosTokens)));
         totalSupply = totalSupply.add((tokens.add(bounosTokens)));
         balanceOf[msg.sender] = balanceOf[msg.sender].add((tokens.add(bounosTokens)));
         emit Transfer(address(0),msg.sender,tokens.add(bounosTokens));
-        fundsWallet.transfer(msg.value);
+        
 
     }
 
@@ -179,9 +179,10 @@ contract BNY   {
         uint256 termAfter = (_unlockTime.div(week));
         if((termAfter >= 1) && (termAfter <= 48) && (term123 == 1))
         {
+            investorIndex++;
             investmentTerm = "short";
             totalInvestmentAfterInterest = _amount.add(((getInterestrate(_amount,1).mul(termAfter))));
-            investors[investorIndex] = Investment(
+            investors[investorIndex-1] = Investment(
                 msg.sender,
                 totalInvestmentAfterInterest,
                 block.timestamp.add(_unlockTime),
@@ -190,13 +191,12 @@ contract BNY   {
 
             emit Deposit(msg.sender,
                 _amount,
-                investorIndex,
+                investorIndex-1,
                 block.timestamp.add(_unlockTime),
                 "SHORT-TERM");
             emit Transfer(msg.sender, address(0), _amount);
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
 
-            investorIndex++;
 
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
@@ -206,16 +206,16 @@ contract BNY   {
         }
 
         if((_unlockTime >= month) && (term123 == 2) && (termAfter <= 12 ) && (_unlockTime.mod(month)) == 0) {
+            investorIndex++;
             termAfter = (_unlockTime.div(month));
             investmentTerm = "mid";
             totalInvestmentAfterInterest = _amount.add(((getInterestrate(_amount,multiplicationForMidTerm).mul(termAfter))));
-            investors[investorIndex] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
+            investors[investorIndex-1] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
 
-            emit Deposit(msg.sender, _amount, investorIndex, block.timestamp.add(_unlockTime), "MID-TERM");
+            emit Deposit(msg.sender, _amount, investorIndex-1, block.timestamp.add(_unlockTime), "MID-TERM");
             emit Transfer(msg.sender, address(0), _amount);
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
 
-            investorIndex++;
 
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
@@ -225,16 +225,16 @@ contract BNY   {
         }
 
         if((_unlockTime >= quarter) && (term123 == 3) && (termAfter <= 16 ) && (_unlockTime.mod(quarter) == 0)) {
+            investorIndex++;
             termAfter = (_unlockTime.div(quarter));
             investmentTerm = "long";
             totalInvestmentAfterInterest = _amount.add(getInterestrate(_amount, multiplicationForLongTerm).mul(termAfter));
-            investors[investorIndex] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
+            investors[investorIndex-1] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
 
-            emit Deposit(msg.sender, _amount, investorIndex, block.timestamp.add(_unlockTime), "LONG-TERM");
+            emit Deposit(msg.sender, _amount, investorIndex-1, block.timestamp.add(_unlockTime), "LONG-TERM");
             emit Transfer(msg.sender, address(0), _amount);
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
 
-            investorIndex++;
 
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
@@ -262,7 +262,7 @@ contract BNY   {
 
         require(balanceOf[msg.sender] >= _amount,"You  have insufficent amount of tokens");
         require(_amount >= minForPassive,"Investment amount should be bigger than 12M");
-
+        passiveInvestorIndex++;
         uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
 
         uint currentInvestor = passiveInvestorIndex;
@@ -301,6 +301,7 @@ contract BNY   {
         dayseconds * passiveInvestors[passiveIncomeID].day)) < block.timestamp,
         "Unlock time for the investment did not pass");
         require(passiveInvestors[passiveIncomeID].day < 366, "The investment is already spent");
+        
         uint totalReward;
         uint numberOfDaysHeld = (block.timestamp - passiveInvestors[passiveIncomeID].investmentTimeStamp) / dayseconds;
 
