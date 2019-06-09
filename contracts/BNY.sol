@@ -177,12 +177,15 @@ contract BNY   {
         require(_unlockTime >= week && (_unlockTime.mod(week)) == 0, "Wrong investment time");
 
         uint256 termAfter = (_unlockTime.div(week));
+
+        uint currentInvestor = investorIndex;
+
         if((termAfter >= 1) && (termAfter <= 48) && (term123 == 1))
         {
             investorIndex++;
             investmentTerm = "short";
             totalInvestmentAfterInterest = _amount.add(((getInterestrate(_amount,1).mul(termAfter))));
-            investors[investorIndex-1] = Investment(
+            investors[currentInvestor] = Investment(
                 msg.sender,
                 totalInvestmentAfterInterest,
                 block.timestamp.add(_unlockTime),
@@ -191,7 +194,7 @@ contract BNY   {
 
             emit Deposit(msg.sender,
                 _amount,
-                investorIndex-1,
+                currentInvestor,
                 block.timestamp.add(_unlockTime),
                 "SHORT-TERM");
             emit Transfer(msg.sender, address(0), _amount);
@@ -202,7 +205,7 @@ contract BNY   {
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
             totalSupply = totalSupply.sub(_amount);
 
-            return (investorIndex - 1);
+            return (currentInvestor);
         }
 
         if((_unlockTime >= month) && (term123 == 2) && (termAfter <= 12 ) && (_unlockTime.mod(month)) == 0) {
@@ -210,9 +213,9 @@ contract BNY   {
             termAfter = (_unlockTime.div(month));
             investmentTerm = "mid";
             totalInvestmentAfterInterest = _amount.add(((getInterestrate(_amount,multiplicationForMidTerm).mul(termAfter))));
-            investors[investorIndex-1] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
+            investors[currentInvestor] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
 
-            emit Deposit(msg.sender, _amount, investorIndex-1, block.timestamp.add(_unlockTime), "MID-TERM");
+            emit Deposit(msg.sender, _amount, currentInvestor, block.timestamp.add(_unlockTime), "MID-TERM");
             emit Transfer(msg.sender, address(0), _amount);
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
 
@@ -221,7 +224,7 @@ contract BNY   {
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
             totalSupply = totalSupply.sub(_amount);
 
-            return (investorIndex - 1);
+            return (currentInvestor);
         }
 
         if((_unlockTime >= quarter) && (term123 == 3) && (termAfter <= 16 ) && (_unlockTime.mod(quarter) == 0)) {
@@ -229,9 +232,9 @@ contract BNY   {
             termAfter = (_unlockTime.div(quarter));
             investmentTerm = "long";
             totalInvestmentAfterInterest = _amount.add(getInterestrate(_amount, multiplicationForLongTerm).mul(termAfter));
-            investors[investorIndex-1] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
+            investors[currentInvestor] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
 
-            emit Deposit(msg.sender, _amount, investorIndex-1, block.timestamp.add(_unlockTime), "LONG-TERM");
+            emit Deposit(msg.sender, _amount, currentInvestor, block.timestamp.add(_unlockTime), "LONG-TERM");
             emit Transfer(msg.sender, address(0), _amount);
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
 
@@ -240,7 +243,7 @@ contract BNY   {
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
             totalSupply = totalSupply.sub(_amount);
 
-            return (investorIndex - 1);
+            return (currentInvestor);
         }
     }
 
@@ -262,7 +265,7 @@ contract BNY   {
 
         require(balanceOf[msg.sender] >= _amount,"You  have insufficent amount of tokens");
         require(_amount >= minForPassive,"Investment amount should be bigger than 12M");
-        passiveInvestorIndex++;
+        
         uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
 
         uint currentInvestor = passiveInvestorIndex;
