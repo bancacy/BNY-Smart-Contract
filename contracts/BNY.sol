@@ -188,11 +188,6 @@ contract BNY   {
                 false,
                 investmentTerm);
 
-            balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
-
-            balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
-            totalSupply = totalSupply.sub(_amount);
-
             emit Deposit(msg.sender,
                 _amount,
                 investorIndex,
@@ -201,7 +196,13 @@ contract BNY   {
             emit Transfer(msg.sender, address(0), _amount);
 
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
+
             investorIndex++;
+
+            balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
+            balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
+            totalSupply = totalSupply.sub(_amount);
+
             return (investorIndex - 1);
         }
 
