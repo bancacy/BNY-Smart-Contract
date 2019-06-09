@@ -123,18 +123,18 @@ contract BNY   {
     function () external payable{
 
         require(tokensSold < tokensForSale, "All tokens are sold");
-        
+        require(msg.value > 0, "Value must be > 0");
         uint256 eth = msg.value;
         uint256 tokens = eth.mul(tokensPerWei);
         uint256 bounosTokens = getDiscountOnBuy(tokens);
 
         require(bounosTokens.add(tokens) <= (tokensForSale).sub(tokensSold), "All tokens are sold");
-
+        fundsWallet.transfer(msg.value);
         tokensSold = tokensSold.add((tokens.add(bounosTokens)));
         totalSupply = totalSupply.add((tokens.add(bounosTokens)));
         balanceOf[msg.sender] = balanceOf[msg.sender].add((tokens.add(bounosTokens)));
         emit Transfer(address(0),msg.sender,tokens.add(bounosTokens));
-        fundsWallet.transfer(msg.value);
+        
 
     }
 
@@ -301,6 +301,7 @@ contract BNY   {
         dayseconds * passiveInvestors[passiveIncomeID].day)) < block.timestamp,
         "Unlock time for the investment did not pass");
         require(passiveInvestors[passiveIncomeID].day < 366, "The investment is already spent");
+        
         uint totalReward;
         uint numberOfDaysHeld = (block.timestamp - passiveInvestors[passiveIncomeID].investmentTimeStamp) / dayseconds;
 
