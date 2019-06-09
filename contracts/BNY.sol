@@ -304,12 +304,12 @@ contract BNY   {
             totalReward = passiveInvestors[passiveIncomeID].investedAmount2;
         }
 
-        passiveInvestors[passiveIncomeID].day = numberOfDaysHeld + 1;
+       
          
         uint numberOfDaysOwed = numberOfDaysHeld - (passiveInvestors[passiveIncomeID].day - 1);
 
         uint totalDailyPassiveIncome = passiveInvestors[passiveIncomeID].dailyPassiveIncome * numberOfDaysOwed;
-
+        passiveInvestors[passiveIncomeID].day = numberOfDaysHeld + 1;
 
         totalReward = totalReward + totalDailyPassiveIncome;
         if(totalReward > 0){
