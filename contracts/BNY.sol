@@ -194,7 +194,6 @@ contract BNY   {
                 block.timestamp.add(_unlockTime),
                 "SHORT-TERM");
             emit Transfer(msg.sender, address(0), _amount);
-
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
 
             investorIndex++;
@@ -230,13 +229,13 @@ contract BNY   {
             investmentTerm = "long";
             totalInvestmentAfterInterest = _amount.add(getInterestrate(_amount, multiplicationForLongTerm).mul(termAfter));
             investors[investorIndex] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
-            
-            investorIndex++;
-            emit Deposit(msg.sender, _amount, investorIndex--, block.timestamp.add(_unlockTime), "LONG-TERM");
+
+            emit Deposit(msg.sender, _amount, investorIndex, block.timestamp.add(_unlockTime), "LONG-TERM");
             emit Transfer(msg.sender, address(0), _amount);
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
 
-            
+            investorIndex++;
+
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
             totalSupply = totalSupply.sub(_amount);
@@ -266,7 +265,9 @@ contract BNY   {
 
         uint256 interestOnInvestment = ((getInterestrate(_amount,75)).div(365));
 
-        passiveInvestors[passiveInvestorIndex] = PassiveIncome(
+        uint currentInvestor = passiveInvestorIndex;
+        passiveInvestorIndex++;
+        passiveInvestors[currentInvestor] = PassiveIncome(
             msg.sender,
             _amount,
             interestOnInvestment,
@@ -280,19 +281,17 @@ contract BNY   {
 
         emit PassiveDeposit(msg.sender,
         _amount,
-            passiveInvestorIndex,
+            currentInvestor,
             block.timestamp.add((dayseconds * 365)),
-            passiveInvestors[passiveInvestorIndex].dailyPassiveIncome,
-            passiveInvestors[passiveInvestorIndex].investmentTimeStamp
+            passiveInvestors[currentInvestor].dailyPassiveIncome,
+            passiveInvestors[currentInvestor].investmentTimeStamp
         );
-
-        passiveInvestorIndex++;
 
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
         balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
         totalSupply = totalSupply.sub(_amount);
 
-        return (passiveInvestorIndex - 1);
+        return (currentInvestor);
     }
 
     function releasePassiveIncome(uint256 passiveIncomeID) public returns (bool success) {
