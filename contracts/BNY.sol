@@ -212,14 +212,15 @@ contract BNY   {
             totalInvestmentAfterInterest = _amount.add(((getInterestrate(_amount,multiplicationForMidTerm).mul(termAfter))));
             investors[investorIndex] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
 
-            balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
-            balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
-            totalSupply = totalSupply.sub(_amount);
-
             emit Deposit(msg.sender, _amount, investorIndex, block.timestamp.add(_unlockTime), "MID-TERM");
             emit Transfer(msg.sender, address(0), _amount);
             emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
             investorIndex++;
+
+            balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
+            balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
+            totalSupply = totalSupply.sub(_amount);
+
             return (investorIndex - 1);
         }
 
@@ -229,13 +230,14 @@ contract BNY   {
             totalInvestmentAfterInterest = _amount.add(getInterestrate(_amount, multiplicationForLongTerm).mul(termAfter));
             investors[investorIndex] = Investment(msg.sender, totalInvestmentAfterInterest, block.timestamp.add(_unlockTime), false, investmentTerm);
 
+            emit Deposit(msg.sender, _amount, investorIndex, block.timestamp.add(_unlockTime), "LONG-TERM");
+            emit Transfer(msg.sender, address(0), _amount);
+            emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
+
             balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
             balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
             totalSupply = totalSupply.sub(_amount);
 
-            emit Deposit(msg.sender, _amount, investorIndex, block.timestamp.add(_unlockTime), "LONG-TERM");
-            emit Transfer(msg.sender, address(0), _amount);
-            emit Transfer(address(0), address(0), totalInvestmentAfterInterest.sub(_amount));
             investorIndex++;
             return (investorIndex - 1);
         }
