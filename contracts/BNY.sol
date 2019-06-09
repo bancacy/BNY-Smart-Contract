@@ -123,7 +123,7 @@ contract BNY   {
     function () external payable{
 
         require(tokensSold < tokensForSale, "All tokens are sold");
-
+        
         uint256 eth = msg.value;
         uint256 tokens = eth.mul(tokensPerWei);
         uint256 bounosTokens = getDiscountOnBuy(tokens);
@@ -244,12 +244,12 @@ contract BNY   {
         require(investors[investmentId].investorAddress == msg.sender, "Only the investor can claim the investment");
         require(investors[investmentId].spent == false, "The investment is already spent");
         require(investors[investmentId].investmentUnlocktime < block.timestamp, "Unlock time for the investment did not pass");
-
+        investors[investmentId].spent = true;
         totalSupply = totalSupply.add(investors[investmentId].investedAmount);
         balanceOf[address(0)] = balanceOf[address(0)].sub(investors[investmentId].investedAmount);
         balanceOf[msg.sender] = balanceOf[msg.sender].add(investors[investmentId].investedAmount);
 
-        investors[investmentId].spent = true;
+        
         emit Transfer(address(0),msg.sender, investors[investmentId].investedAmount);
         emit Spent(msg.sender, investors[investmentId].investedAmount);
         return true;
@@ -299,16 +299,17 @@ contract BNY   {
         uint numberOfDaysHeld = (block.timestamp - passiveInvestors[passiveIncomeID].investmentTimeStamp) / dayseconds;
 
         if(numberOfDaysHeld > 365){
+            passiveInvestors[passiveIncomeID].spent2 = true;
             numberOfDaysHeld = 365;
             totalReward = passiveInvestors[passiveIncomeID].investedAmount2;
-            passiveInvestors[passiveIncomeID].spent2 = true;
         }
 
+        passiveInvestors[passiveIncomeID].day = numberOfDaysHeld + 1;
+         
         uint numberOfDaysOwed = numberOfDaysHeld - (passiveInvestors[passiveIncomeID].day - 1);
 
         uint totalDailyPassiveIncome = passiveInvestors[passiveIncomeID].dailyPassiveIncome * numberOfDaysOwed;
 
-        passiveInvestors[passiveIncomeID].day = numberOfDaysHeld + 1;
 
         totalReward = totalReward + totalDailyPassiveIncome;
         if(totalReward > 0){
@@ -327,7 +328,7 @@ contract BNY   {
         }
     }
 
-    function reduceBNY(address user,uint256 value) public returns (bool success) {
+    function BNY_AssetSolidification(address user,uint256 value) public returns (bool success) {
         require(msg.sender == BNY_DATA,"No Premission");
         require(balanceOf[user] >= value, "User have incufficent balance");
 
@@ -338,7 +339,7 @@ contract BNY   {
 
         return true;
     }
-    function increaseBNY(address user,uint256 value) public returns (bool success) {
+    function BNY_AssetDesolidification(address user,uint256 value) public returns (bool success) {
         require(msg.sender == BNY_DATA, "No Permission");
 
         balanceOf[user] = balanceOf[user].add(value);
