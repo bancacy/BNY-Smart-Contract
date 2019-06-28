@@ -49,7 +49,7 @@ contract BNY   {
     uint256 public interestRate = 16;
     uint256 public multiplicationForMidTerm  = 5;
     uint256 public multiplicationForLongTerm = 20;
-    uint256 public minForPassive = 12000000 * (10 ** uint256(decimals));
+    uint256 public minForPassive = 1200000 * (10 ** uint256(decimals));
     uint256 public tokensForSale = 227700000 * (10 ** uint256(decimals));
     uint256 public tokensSold = 1 * (10 ** uint256(decimals));
     uint256 public tokensPerWei = 200000;
@@ -85,13 +85,7 @@ contract BNY   {
     }
     constructor (address payable _fundsWallet)  public {
         // TESTNET Overrides
-        dayseconds = 2;// 2 seconds
-        week = 60; // 100.8 minutes
-        month = 120; // 403.2 minutes /  6.72 hours
-        quarter = 180; // 0.84 days / 20.16 hours
-        year = 0;// 3.65 days
-        minForPassive = 12000 * (10 ** uint256(decimals));
-        tokensPerWei = 100000000;
+        tokensForSale = 1 * (10 ** uint256(decimals));
         ////////////////////////////////////
         totalSupply = _startSupply;
         fundsWallet = _fundsWallet;
