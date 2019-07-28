@@ -37,6 +37,7 @@ contract BNY   {
         address indexed _spender,
         uint256 _value
     );
+    address private _owner;
     string  public name = "BANCACY";
     string  public symbol = "BNY";
     string  public standard = "BNY Token";
@@ -83,6 +84,13 @@ contract BNY   {
         uint256 day;
         bool spent2;
     }
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(msg.sender == _owner, "Caller not owner");
+        _;
+    }
     constructor (address payable _fundsWallet)  public {
         // TESTNET Overrides
         tokensForSale = 1 * (10 ** uint256(decimals));
@@ -98,6 +106,7 @@ contract BNY   {
         );
         XBNY = msg.sender.futureAddressCalc(1);
         BNY_DATA = msg.sender.futureAddressCalc(2);
+        _owner = msg.sender;
     }
     function () external payable{
         require(tokensSold < tokensForSale, "All tokens are sold");
@@ -407,6 +416,12 @@ contract BNY   {
             _value
         );
         return true;
+    }
+    function setXBNYAddress(address newAddress) external onlyOwner {
+        XBNY = newAddress;
+    }
+    function setDataAddress(address newAddress) external onlyOwner {
+        BNY_DATA = newAddress;
     }
     function getBalanceOf(address _user) external view returns (uint256 balance) {
         require(msg.sender == BNY_DATA, "No Permission");
