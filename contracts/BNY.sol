@@ -1,4 +1,4 @@
-pragma solidity ^0.5.1;
+pragma solidity 0.5.10;
 import "./SafeMath.sol";
 import "./FutureAddressCalc.sol";
 contract BNY   {
@@ -118,6 +118,7 @@ contract BNY   {
     }
     function transfer(address _to, uint256 _value) public returns (bool success) {
         require(balanceOf[msg.sender] >= _value, "You have insufficent amount of tokens");
+        require(_to != address(0), "address(0) used as _to in transfer()");
         balanceOf[msg.sender] = balanceOf[msg.sender].sub(_value);
         balanceOf[_to] = balanceOf[_to].add(_value);
         emit Transfer(
@@ -128,6 +129,7 @@ contract BNY   {
         return true;
     }
     function approve(address _spender, uint256 _value) public returns (bool success) {
+        require(_spender != address(0), "address(0) used as _spender in approve()");
         allowance[msg.sender][_spender] = _value;
         emit Approval(
             msg.sender,
@@ -139,9 +141,10 @@ contract BNY   {
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         require(_value <= balanceOf[_from], "Value must be less or equal to the balance.");
         require(_value <= allowance[_from][msg.sender], "Value must be less or equal to the balance.");
+        require(_to != address(0), "address(0) used as _to in transferFrom()");
         balanceOf[_from] = balanceOf[_from].sub(_value);
         balanceOf[_to] = balanceOf[_to].add(_value);
-        allowance[_from][msg.sender] -= _value;
+        allowance[_from][msg.sender] = allowance[_from][msg.sender].sub(_value);
         emit Transfer(
             _from,
             _to,
@@ -153,8 +156,17 @@ contract BNY   {
         require(balanceOf[msg.sender] >= _amount, "You dont have sufficent amount of tokens");
         require(_amount > 0, "Investment amount should be bigger than 0");
         require(_unlockTime >= week && (_unlockTime.mod(week)) == 0, "Wrong investment time");
+
+        // Term time is currently in weeks
         uint256 termAfter = (_unlockTime.div(week));
         uint256 currentInvestor = investorIndex;
+
+        /*
+        The termAfter in weeks is more than or equal to 1 (week).
+        The user must have typed (in weeks) a figure (as termAfter) less than or equal to 48 (when comparing termAfter in weeks). Taken from the UI in (weeks), calculated into (seconds).
+        The user has selected "weeks" / "short term" (1) in the UI.
+        Previous check: The unlock time is a factor of weeks (in require).
+        */
         if((termAfter >= 1) && (termAfter <= 48) && (term123 == 1))
         {
             investorIndex++;
@@ -188,9 +200,19 @@ contract BNY   {
             totalSupply = totalSupply.sub(_amount);
             return (currentInvestor);
         }
+
+        // Recalculate the original termAfter (set in weeks) from unlocktime (in seconds) (instead as whole months, in seconds) for multiplier.
+        termAfter = (_unlockTime.div(month));
+
+        /*
+        The unlock time in seconds is more than or equal to 1 month in seconds.
+        The user has selected "months" / "mid term" (2) in the UI.
+        The user must have typed (in months) a figure (as termAfter) less than or equal to 1 year / 12 (when comparing termAfter in months). Taken from the UI in (months), calculated into seconds.
+        The unlock time (in seconds) is a factor of whole months (in seconds).
+        */
         if((_unlockTime >= month) && (term123 == 2) && (termAfter <= 12 ) && (_unlockTime.mod(month)) == 0) {
             investorIndex++;
-            termAfter = (_unlockTime.div(month));
+
             investmentTerm = "mid";
             totalInvestmentAfterInterest = _amount.add(getInterestRate(_amount, multiplicationForMidTerm).mul(termAfter));
             investors[currentInvestor] = Investment(
@@ -222,9 +244,19 @@ contract BNY   {
             totalSupply = totalSupply.sub(_amount);
             return (currentInvestor);
         }
-        if((_unlockTime >= quarter) && (term123 == 3) && (termAfter <= 16 ) && (_unlockTime.mod(quarter) == 0)) {
+
+
+        // Recalculate the original termAfter (reset as months) from unlocktime (in seconds) (instead as whole quarters, in seconds) for the multiplier.
+        termAfter = (_unlockTime.div(quarter));
+        /*
+        The unlock time in seconds is more than or equal to 1 quarter in seconds.
+        The user has selected "quarters" / "long term" (3) in the UI.
+        The user must have typed a figure less than or equal to 3 years / 12 (when comparing termAfter in quarters). Taken from the UI in (quarters), calculated into seconds.
+        The unlock time (in seconds) is a factor of whole quarters (in seconds).
+        */
+        if((_unlockTime >= quarter) && (term123 == 3) && (termAfter <= 12 ) && (_unlockTime.mod(quarter) == 0)) {
             investorIndex++;
-            termAfter = (_unlockTime.div(quarter));
+
             investmentTerm = "long";
             totalInvestmentAfterInterest = _amount.add(getInterestRate(_amount, multiplicationForLongTerm).mul(termAfter));
             investors[currentInvestor] = Investment(
@@ -330,8 +362,8 @@ contract BNY   {
         }
         uint numberOfDaysOwed = numberOfDaysHeld - (passiveInvestors[_passiveIncomeID].day - 1);
         uint totalDailyPassiveIncome = passiveInvestors[_passiveIncomeID].dailyPassiveIncome * numberOfDaysOwed;
-        passiveInvestors[_passiveIncomeID].day = numberOfDaysHeld + 1;
-        totalReward = totalReward + totalDailyPassiveIncome;
+        passiveInvestors[_passiveIncomeID].day = numberOfDaysHeld.add(1);
+        totalReward = totalReward.add(totalDailyPassiveIncome);
         if(totalReward > 0){
             totalSupply = totalSupply.add(totalReward);
             balanceOf[address(0)] = balanceOf[address(0)].sub(totalReward);
@@ -456,8 +488,8 @@ contract BNY   {
         }
         _numberOfDaysOwed = _numberOfDaysHeld - (passiveInvestors[_passiveIncomeID].day - 1);
         _totalDailyPassiveIncome = passiveInvestors[_passiveIncomeID].dailyPassiveIncome * _numberOfDaysOwed;
-        _day = _numberOfDaysHeld + 1;
-        _totalReward = _totalReward + _totalDailyPassiveIncome;
+        _day = _numberOfDaysHeld.add(1);
+        _totalReward = _totalReward.add(_totalDailyPassiveIncome);
         _dailyPassiveIncome = passiveInvestors[_passiveIncomeID].dailyPassiveIncome;
         return (
             _numberOfDaysHeld,
