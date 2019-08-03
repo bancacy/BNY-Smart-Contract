@@ -51,7 +51,7 @@ contract BNY   {
     uint256 public multiplicationForMidTerm  = 5;
     uint256 public multiplicationForLongTerm = 20;
     uint256 public minForPassive = 1200000 * (10 ** uint256(decimals));
-    uint256 public tokensForSale = 227700000 * (10 ** uint256(decimals));
+    uint256 public tokensForSale = 534600000 * (10 ** uint256(decimals));
     uint256 public tokensSold = 1 * (10 ** uint256(decimals));
     uint256 public tokensPerWei = 200000;
     uint256 public Percent = 1000000000;
@@ -60,7 +60,7 @@ contract BNY   {
     uint256 internal month = 2419200;
     uint256 internal quarter = 7257600;
     uint256 internal year = 31536000;
-    uint256 internal _startSupply = 762300000 * (10 ** uint256(decimals));
+    uint256 internal _startSupply = 455400000 * (10 ** uint256(decimals));
     address payable public fundsWallet;
     address public XBNY;
     address public BNY_DATA;
