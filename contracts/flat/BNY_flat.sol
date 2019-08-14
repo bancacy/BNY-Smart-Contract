@@ -1,9 +1,9 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.10;
 
 library AddressCalc {
 
 
-    function futureAddressCalc(address payable  _origin, uint _nonce) internal pure  returns (address) {
+    function futureAddressCalc(address payable _origin, uint _nonce) internal pure  returns (address) {
 
         if(_nonce == 0x00) return address(uint160(uint256((keccak256(abi.encodePacked(byte(0xd6),
          byte(0x94), _origin, byte(0x80)))))));
@@ -19,23 +19,161 @@ library AddressCalc {
 
         if(_nonce <= 0xffffff) return address(uint160(uint256((keccak256(abi.encodePacked(byte(0xd9),
          byte(0x94), _origin, byte(0x83), uint24(_nonce)))))));
+
+		return address(uint160(uint256((keccak256(abi.encodePacked(byte(0xda), byte(0x94), _origin, byte(0x84), uint32(_nonce)))))));
     }
 
 }
 
 
 /**
- * @title SafeMath
- * @dev Unsigned math operations with safety checks that revert on error.
+ * @dev Interface of the ERC20 standard as defined in the EIP. Does not include
+ * the optional functions; to access them see {ERC20Detailed}.
+ */
+interface IERC20 {
+    /**
+     * @dev Returns the amount of tokens in existence.
+     */
+    function totalSupply() external view returns (uint256);
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) external view returns (uint256);
+
+    /**
+     * @dev Moves `amount` tokens from the caller's account to `recipient`.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transfer(address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Returns the remaining number of tokens that `spender` will be
+     * allowed to spend on behalf of `owner` through {transferFrom}. This is
+     * zero by default.
+     *
+     * This value changes when {approve} or {transferFrom} are called.
+     */
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * IMPORTANT: Beware that changing an allowance with this method brings the risk
+     * that someone may use both the old and the new allowance by unfortunate
+     * transaction ordering. One possible solution to mitigate this race
+     * condition is to first reduce the spender's allowance to 0 and set the
+     * desired value afterwards:
+     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
+     *
+     * Emits an {Approval} event.
+     */
+    function approve(address spender, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Moves `amount` tokens from `sender` to `recipient` using the
+     * allowance mechanism. `amount` is then deducted from the caller's
+     * allowance.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Transfer} event.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+    /**
+     * @dev Emitted when `value` tokens are moved from one account (`from`) to
+     * another (`to`).
+     *
+     * Note that `value` may be zero.
+     */
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    /**
+     * @dev Emitted when the allowance of a `spender` for an `owner` is set by
+     * a call to {approve}. `value` is the new allowance.
+     */
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+
+/**
+ * @dev Wrappers over Solidity's arithmetic operations with added overflow
+ * checks.
+ *
+ * Arithmetic operations in Solidity wrap on overflow. This can easily result
+ * in bugs, because programmers usually assume that an overflow raises an
+ * error, which is the standard behavior in high level programming languages.
+ * `SafeMath` restores this intuition by reverting the transaction when an
+ * operation overflows.
+ *
+ * Using this library instead of the unchecked operations eliminates an entire
+ * class of bugs, so it's recommended to use it always.
  */
 library SafeMath {
     /**
-     * @dev Multiplies two unsigned integers, reverts on overflow.
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
+     *
+     * Requirements:
+     * - Addition cannot overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a, "SafeMath: addition overflow");
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return sub(a, b, "SafeMath: subtraction overflow");
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b <= a, errorMessage);
+        uint256 c = a - b;
+
+        return c;
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     * - Multiplication cannot overflow.
      */
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {
         // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
         // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
         if (a == 0) {
             return 0;
         }
@@ -47,11 +185,34 @@ library SafeMath {
     }
 
     /**
-     * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
+     * @dev Returns the integer division of two unsigned integers. Reverts on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
      */
     function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return div(a, b, "SafeMath: division by zero");
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers. Reverts with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
         // Solidity only automatically asserts when dividing by 0
-        require(b > 0, "SafeMath: division by zero");
+        require(b > 0, errorMessage);
         uint256 c = a / b;
         // assert(a == b * c + a % b); // There is no case in which this doesn't hold
 
@@ -59,31 +220,33 @@ library SafeMath {
     }
 
     /**
-     * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
-     */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b <= a, "SafeMath: subtraction overflow");
-        uint256 c = a - b;
-
-        return c;
-    }
-
-    /**
-     * @dev Adds two unsigned integers, reverts on overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        require(c >= a, "SafeMath: addition overflow");
-
-        return c;
-    }
-
-    /**
-     * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
-     * reverts when dividing by zero.
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
      */
     function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        require(b != 0, "SafeMath: modulo by zero");
+        return mod(a, b, "SafeMath: modulo by zero");
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * Reverts with custom message when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        require(b != 0, errorMessage);
         return a % b;
     }
 }
@@ -124,36 +287,39 @@ contract BNY   {
         address indexed _spender,
         uint256 _value
     );
-    string  public name = "BANCACY";
-    string  public symbol = "BNY";
-    string  public standard = "BNY Token";
-    string  internal investmentTerm;
-    uint256 public decimals = 18 ;
-    uint256 public totalSupply;
+    address private _owner;
+    string constant public name = "BANCACY";
+    string constant public symbol = "BNY";
+    string constant public standard = "BNY Token";
+    uint256 constant public decimals = 18 ;
+    uint256 private _totalSupply;
     uint256 public totalInvestmentAfterInterest;
     uint256 public investorIndex = 1;
     uint256 public passiveInvestorIndex = 1;
-    uint256 public interestRate = 16;
-    uint256 public multiplicationForMidTerm  = 5;
-    uint256 public multiplicationForLongTerm = 20;
+    uint256 constant public interestRate = 16;
+    uint256 constant public multiplicationForMidTerm  = 5;
+    uint256 constant public multiplicationForLongTerm = 20;
     uint256 public minForPassive = 1200000 * (10 ** uint256(decimals));
-    uint256 public tokensForSale = 227700000 * (10 ** uint256(decimals));
+    uint256 public tokensForSale = 534600000 * (10 ** uint256(decimals));
     uint256 public tokensSold = 1 * (10 ** uint256(decimals));
-    uint256 public tokensPerWei = 200000;
-    uint256 public Percent = 1000000000;
-    uint256 internal dayseconds = 86400;
-    uint256 internal week = 604800;
-    uint256 internal month = 2419200;
-    uint256 internal quarter = 7257600;
-    uint256 internal year = 31536000;
-    uint256 internal _startSupply = 762300000 * (10 ** uint256(decimals));
+    uint256 constant public tokensPerWei = 200000;
+  	uint256 constant public Percent = 1000000000;
+    uint256 constant internal secondsInDay = 86400;
+    uint256 constant internal secondsInWeek = 604800;
+    uint256 constant internal secondsInMonth = 2419200;
+    uint256 constant internal secondsInQuarter = 7257600;
+	uint256 constant internal daysInYear = 365;
+    uint256 internal _startSupply = 455400000 * (10 ** uint256(decimals));
     address payable public fundsWallet;
     address public XBNY;
     address public BNY_DATA;
+
+	enum TermData {DEFAULT, ONE, TWO, THREE}
+
     mapping(uint256 => Investment) private investors;
     mapping(uint256 => PassiveIncome) private passiveInvestors;
-    mapping(address => uint256) public balanceOf;
-    mapping(address => mapping(address => uint256)) public allowance;
+    mapping (address => uint256) private _balances;
+    mapping (address => mapping (address => uint256)) private _allowances;
     struct Investment {
         address investorAddress;
         uint256 investedAmount;
@@ -171,20 +337,18 @@ contract BNY   {
         bool spent2;
     }
     constructor (address payable _fundsWallet)  public {
-        // TESTNET Overrides
-        tokensForSale = 1 * (10 ** uint256(decimals));
-        ////////////////////////////////////
-        totalSupply = _startSupply;
+        _totalSupply = _startSupply;
         fundsWallet = _fundsWallet;
-        balanceOf[fundsWallet] = _startSupply;
-        balanceOf[address(0)] = 0;
+        _balances[fundsWallet] = _startSupply;
+        _balances[address(0)] = 0;
         emit Transfer(
             address(0),
             fundsWallet,
             _startSupply
         );
-        XBNY = msg.sender.futureAddressCalc(1);
-        BNY_DATA = msg.sender.futureAddressCalc(2);
+        XBNY = _msgSender().futureAddressCalc(1);
+        BNY_DATA = _msgSender().futureAddressCalc(2);
+        _owner = _msgSender();
     }
     function () external payable{
         require(tokensSold < tokensForSale, "All tokens are sold");
@@ -192,76 +356,191 @@ contract BNY   {
         uint256 eth = msg.value;
         uint256 tokens = eth.mul(tokensPerWei);
         uint256 bounosTokens = getDiscountOnBuy(tokens);
-        require(bounosTokens.add(tokens) <= (tokensForSale).sub(tokensSold), "All tokens are sold");
+		uint256 totalTokens = bounosTokens.add(tokens);
+        require(totalTokens <= (tokensForSale).sub(tokensSold), "All tokens are sold");
         fundsWallet.transfer(msg.value);
-        tokensSold = tokensSold.add((tokens.add(bounosTokens)));
-        totalSupply = totalSupply.add((tokens.add(bounosTokens)));
-        balanceOf[msg.sender] = balanceOf[msg.sender].add((tokens.add(bounosTokens)));
+        tokensSold = tokensSold.add((totalTokens));
+        _totalSupply = _totalSupply.add((totalTokens));
+        _balances[_msgSender()] = _balances[_msgSender()].add((totalTokens));
         emit Transfer(
             address(0),
-            msg.sender,
-            tokens.add(bounosTokens)
+            _msgSender(),
+            totalTokens
         );
     }
-    function transfer(address _to, uint256 _value) public returns (bool success) {
-        require(balanceOf[msg.sender] >= _value, "You have insufficent amount of tokens");
-        balanceOf[msg.sender] = balanceOf[msg.sender].sub(_value);
-        balanceOf[_to] = balanceOf[_to].add(_value);
-        emit Transfer(
-            msg.sender,
-            _to,
-            _value
-        );
+    /**
+     * @dev See {IERC20-totalSupply}.
+     */
+    function totalSupply() public view returns (uint256) {
+        return _totalSupply;
+    }
+    /**
+     * @dev See {IERC20-transfer}.
+     *
+     * Requirements:
+     *
+     * - `recipient` cannot be the zero address.
+     * - the caller must have a balance of at least `amount`.
+     */
+    function transfer(address recipient, uint256 amount) public returns (bool) {
+        _transfer(_msgSender(), recipient, amount);
         return true;
     }
-    function approve(address _spender, uint256 _value) public returns (bool success) {
-        allowance[msg.sender][_spender] = _value;
-        emit Approval(
-            msg.sender,
-            _spender,
-            _value
-        );
+    /**
+     * @dev See {IERC20-approve}.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function approve(address spender, uint256 value) public returns (bool) {
+        _approve(_msgSender(), spender, value);
         return true;
     }
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-        require(_value <= balanceOf[_from], "Value must be less or equal to the balance.");
-        require(_value <= allowance[_from][msg.sender], "Value must be less or equal to the balance.");
-        balanceOf[_from] = balanceOf[_from].sub(_value);
-        balanceOf[_to] = balanceOf[_to].add(_value);
-        allowance[_from][msg.sender] -= _value;
-        emit Transfer(
-            _from,
-            _to,
-            _value
-        );
+    /**
+     * @dev See {IERC20-transferFrom}.
+     *
+     * Emits an {Approval} event indicating the updated allowance. This is not
+     * required by the EIP. See the note at the beginning of {ERC20};
+     *
+     * Requirements:
+     * - `sender` and `recipient` cannot be the zero address.
+     * - `sender` must have a balance of at least `value`.
+     * - the caller must have allowance for `sender`'s tokens of at least
+     * `amount`.
+     */
+    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
+        _transfer(sender, recipient, amount);
+        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
         return true;
     }
-    function investment(uint256 _unlockTime, uint256 _amount, uint term123) public returns (uint256) {
-        require(balanceOf[msg.sender] >= _amount, "You dont have sufficent amount of tokens");
+	/**
+     * @dev See {IERC20-allowance}.
+     */
+    function allowance(address owner, address spender) public view returns (uint256) {
+        return _allowances[owner][spender];
+    }
+	/**
+     * @dev See {IERC20-balanceOf}.
+     */
+    function balanceOf(address account) public view returns (uint256) {
+        return _balances[account];
+    }
+	/**
+     * @dev Atomically increases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
+        return true;
+    }
+
+    /**
+     * @dev Atomically decreases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     * - `spender` must have allowance for the caller of at least
+     * `subtractedValue`.
+     */
+    function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        return true;
+    }
+	/**
+     * @dev Moves tokens `amount` from `sender` to `recipient`.
+     *
+     * This is internal function is equivalent to {transfer}, and can be used to
+     * e.g. implement automatic token fees, slashing mechanisms, etc.
+     *
+     * Emits a {Transfer} event.
+     *
+     * Requirements:
+     *
+     * - `sender` cannot be the zero address.
+     * - `recipient` cannot be the zero address.
+     * - `sender` must have a balance of at least `amount`.
+     */
+    function _transfer(address sender, address recipient, uint256 amount) internal {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _balances[recipient] = _balances[recipient].add(amount);
+        emit Transfer(sender, recipient, amount);
+    }
+	/**
+     * @dev Sets `amount` as the allowance of `spender` over the `owner`s tokens.
+     *
+     * This is internal function is equivalent to `approve`, and can be used to
+     * e.g. set automatic allowances for certain subsystems, etc.
+     *
+     * Emits an {Approval} event.
+     *
+     * Requirements:
+     *
+     * - `owner` cannot be the zero address.
+     * - `spender` cannot be the zero address.
+     */
+    function _approve(address owner, address spender, uint256 value) internal {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _allowances[owner][spender] = value;
+        emit Approval(owner, spender, value);
+    }
+	function _msgSender() internal view returns (address payable) {
+        return msg.sender;
+    }
+    function makeInvestment(uint256 _unlockTime, uint256 _amount, uint term123) external returns (uint256) {
+        require(_balances[_msgSender()] >= _amount, "You dont have sufficent amount of tokens");
         require(_amount > 0, "Investment amount should be bigger than 0");
-        require(_unlockTime >= week && (_unlockTime.mod(week)) == 0, "Wrong investment time");
-        uint256 termAfter = (_unlockTime.div(week));
+        require(_unlockTime >= secondsInWeek && (_unlockTime.mod(secondsInWeek)) == 0, "Wrong investment time");
+        // Term time is currently in weeks
+        uint256 termAfter = (_unlockTime.div(secondsInWeek));
         uint256 currentInvestor = investorIndex;
-        if((termAfter >= 1) && (termAfter <= 48) && (term123 == 1))
+
+        /*
+        The termAfter in weeks is more than or equal to 1 (week).
+        The user must have typed (in weeks) a figure (as termAfter) less than or equal to 48 (when comparing termAfter in weeks). Taken from the UI in (weeks), calculated into (seconds).
+        The user has selected "weeks" / "short term" (1) in the UI.
+        Previous check: The unlock time is a factor of weeks (in require).
+        */
+        if((termAfter >= 1) &&
+		(termAfter <= 48) &&
+		(term123 == uint(TermData.ONE)))
         {
             investorIndex++;
-            investmentTerm = "short";
-            totalInvestmentAfterInterest = _amount.add(getInterestRate(_amount, 1).mul(termAfter));
+            totalInvestmentAfterInterest = _amount.add(getInterestRate(_amount, termAfter));
             investors[currentInvestor] = Investment(
-                msg.sender,
+                _msgSender(),
                 totalInvestmentAfterInterest,
                 block.timestamp.add(_unlockTime),
                 false,
-                investmentTerm
+                "short"
             );
-            emit Deposit(msg.sender,
+            emit Deposit(_msgSender(),
                 _amount,
                 currentInvestor,
                 block.timestamp.add(_unlockTime),
                 "SHORT-TERM"
             );
             emit Transfer(
-                msg.sender,
+                _msgSender(),
                 address(0),
                 _amount
             );
@@ -270,32 +549,43 @@ contract BNY   {
                 address(0),
                 totalInvestmentAfterInterest.sub(_amount)
             );
-            balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
-            balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
-            totalSupply = totalSupply.sub(_amount);
+            _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
+            _balances[address(0)] = _balances[address(0)].add(totalInvestmentAfterInterest);
+            _totalSupply = _totalSupply.sub(_amount);
             return (currentInvestor);
         }
-        if((_unlockTime >= month) && (term123 == 2) && (termAfter <= 12 ) && (_unlockTime.mod(month)) == 0) {
+
+        // Recalculate the original termAfter (set in weeks) from unlocktime (in seconds) (instead as whole months, in seconds) for multiplier.
+        termAfter = (_unlockTime.div(secondsInMonth));
+
+        /*
+        The unlock time in seconds is more than or equal to 1 month in seconds.
+        The user has selected "months" / "mid term" (2) in the UI.
+        The user must have typed (in months) a figure (as termAfter) less than or equal to 1 year / 12 (when comparing termAfter in months). Taken from the UI in (months), calculated into seconds.
+        The unlock time (in seconds) is a factor of whole months (in seconds).
+        */
+        if((_unlockTime >= secondsInMonth) &&
+		(term123 == uint(TermData.TWO)) &&
+		(termAfter <= 12 ) &&
+		(_unlockTime.mod(secondsInMonth)) == 0) {
             investorIndex++;
-            termAfter = (_unlockTime.div(month));
-            investmentTerm = "mid";
             totalInvestmentAfterInterest = _amount.add(getInterestRate(_amount, multiplicationForMidTerm).mul(termAfter));
             investors[currentInvestor] = Investment(
-                msg.sender,
+                _msgSender(),
                 totalInvestmentAfterInterest,
                 block.timestamp.add(_unlockTime),
                 false,
-                investmentTerm
+                "mid"
             );
             emit Deposit(
-                msg.sender,
+                _msgSender(),
                 _amount,
                 currentInvestor,
                 block.timestamp.add(_unlockTime),
                 "MID-TERM"
             );
             emit Transfer(
-                msg.sender,
+                _msgSender(),
                 address(0),
                 _amount
             );
@@ -304,32 +594,43 @@ contract BNY   {
                 address(0),
                 totalInvestmentAfterInterest.sub(_amount)
             );
-            balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
-            balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
-            totalSupply = totalSupply.sub(_amount);
+            _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
+            _balances[address(0)] = _balances[address(0)].add(totalInvestmentAfterInterest);
+            _totalSupply = _totalSupply.sub(_amount);
             return (currentInvestor);
         }
-        if((_unlockTime >= quarter) && (term123 == 3) && (termAfter <= 16 ) && (_unlockTime.mod(quarter) == 0)) {
+
+
+        // Recalculate the original termAfter (reset as months) from unlocktime (in seconds) (instead as whole quarters, in seconds) for the multiplier.
+        termAfter = (_unlockTime.div(secondsInQuarter));
+        /*
+        The unlock time in seconds is more than or equal to 1 quarter in seconds.
+        The user has selected "quarters" / "long term" (3) in the UI.
+        The user must have typed a figure less than or equal to 3 years / 12 (when comparing termAfter in quarters). Taken from the UI in (quarters), calculated into seconds.
+        The unlock time (in seconds) is a factor of whole quarters (in seconds).
+        */
+        if((_unlockTime >= secondsInQuarter) &&
+		(term123 == uint(TermData.THREE)) &&
+		(termAfter <= 12 ) &&
+		(_unlockTime.mod(secondsInQuarter) == 0)) {
             investorIndex++;
-            termAfter = (_unlockTime.div(quarter));
-            investmentTerm = "long";
             totalInvestmentAfterInterest = _amount.add(getInterestRate(_amount, multiplicationForLongTerm).mul(termAfter));
             investors[currentInvestor] = Investment(
-                msg.sender,
+                _msgSender(),
                 totalInvestmentAfterInterest,
                 block.timestamp.add(_unlockTime),
                 false,
-                investmentTerm
+                "long"
             );
             emit Deposit(
-                msg.sender,
+                _msgSender(),
                 _amount,
                 currentInvestor,
                 block.timestamp.add(_unlockTime),
                 "LONG-TERM"
             );
             emit Transfer(
-                msg.sender,
+                _msgSender(),
                 address(0),
                 _amount
             );
@@ -338,98 +639,98 @@ contract BNY   {
                 address(0),
                 totalInvestmentAfterInterest.sub(_amount)
             );
-            balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
-            balanceOf[address(0)] = balanceOf[address(0)].add(totalInvestmentAfterInterest);
-            totalSupply = totalSupply.sub(_amount);
+            _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
+            _balances[address(0)] = _balances[address(0)].add(totalInvestmentAfterInterest);
+            _totalSupply = _totalSupply.sub(_amount);
             return (currentInvestor);
         }
     }
     function releaseInvestment(uint256 _investmentId) external returns (bool success) {
-        require(investors[_investmentId].investorAddress == msg.sender, "Only the investor can claim the investment");
+        require(investors[_investmentId].investorAddress == _msgSender(), "Only the investor can claim the investment");
         require(investors[_investmentId].spent == false, "The investment is already spent");
         require(investors[_investmentId].investmentUnlocktime < block.timestamp, "Unlock time for the investment did not pass");
         investors[_investmentId].spent = true;
-        totalSupply = totalSupply.add(investors[_investmentId].investedAmount);
-        balanceOf[address(0)] = balanceOf[address(0)].sub(investors[_investmentId].investedAmount);
-        balanceOf[msg.sender] = balanceOf[msg.sender].add(investors[_investmentId].investedAmount);
+        _totalSupply = _totalSupply.add(investors[_investmentId].investedAmount);
+        _balances[address(0)] = _balances[address(0)].sub(investors[_investmentId].investedAmount);
+        _balances[_msgSender()] = _balances[_msgSender()].add(investors[_investmentId].investedAmount);
         emit Transfer(
             address(0),
-            msg.sender,
+            _msgSender(),
             investors[_investmentId].investedAmount
         );
         emit Spent(
-            msg.sender,
+            _msgSender(),
             investors[_investmentId].investedAmount
         );
         return true;
     }
-    function passiveIncomeInvestment(uint256 _amount) external returns (uint256) {
-        require(balanceOf[msg.sender] >= _amount, "You  have insufficent amount of tokens");
-        require(_amount >= minForPassive, "Investment amount should be bigger than 12M");
-        uint256 interestOnInvestment = getInterestRate(_amount, 75).div(365);
+    function makePassiveIncomeInvestment(uint256 _amount) external returns (uint256) {
+        require(_balances[_msgSender()] >= _amount, "You  have insufficent amount of tokens");
+        require(_amount >= minForPassive, "Investment amount should be bigger than 1.2M");
+        uint256 interestOnInvestment = getInterestRate(_amount, 75).div(daysInYear);
         uint256 currentInvestor = passiveInvestorIndex;
         passiveInvestorIndex++;
         passiveInvestors[currentInvestor] = PassiveIncome(
-            msg.sender,
+            _msgSender(),
             _amount,
             interestOnInvestment,
             block.timestamp,
-            block.timestamp.add(dayseconds * 365),
+            block.timestamp.add(secondsInDay * daysInYear),
             1,
             false
         );
         emit Transfer(
-            msg.sender,
+            _msgSender(),
             address(0),
             _amount
         );
         emit Transfer(
             address(0),
             address(0),
-            interestOnInvestment.mul(365)
+            interestOnInvestment.mul(daysInYear)
         );
         emit PassiveDeposit(
-            msg.sender,
+            _msgSender(),
             _amount,
             currentInvestor,
-            block.timestamp.add((dayseconds * 365)),
+            block.timestamp.add((secondsInDay * daysInYear)),
             passiveInvestors[currentInvestor].dailyPassiveIncome,
             passiveInvestors[currentInvestor].investmentTimeStamp
         );
-        balanceOf[msg.sender] = balanceOf[msg.sender].sub(_amount);
-        balanceOf[address(0)] = balanceOf[address(0)].add((interestOnInvestment.mul(365)).add(_amount));
-        totalSupply = totalSupply.sub(_amount);
+        _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
+        _balances[address(0)] = _balances[address(0)].add((interestOnInvestment.mul(daysInYear)).add(_amount));
+        _totalSupply = _totalSupply.sub(_amount);
         return (currentInvestor);
     }
     function releasePassiveIncome(uint256 _passiveIncomeID) external returns (bool success) {
-        require(passiveInvestors[_passiveIncomeID].investorAddress2 == msg.sender, "Only the investor can claim the investment");
-        require(passiveInvestors[_passiveIncomeID].spent2 == false, "The investment is already spent");
+        require(passiveInvestors[_passiveIncomeID].investorAddress2 == _msgSender(), "Only the investor can claim the investment");
+        require(passiveInvestors[_passiveIncomeID].spent2 == false, "The investment is already claimed");
         require(passiveInvestors[_passiveIncomeID].investmentTimeStamp.add((
-        dayseconds * passiveInvestors[_passiveIncomeID].day)) < block.timestamp,
+        secondsInDay * passiveInvestors[_passiveIncomeID].day)) < block.timestamp,
         "Unlock time for the investment did not pass");
-        require(passiveInvestors[_passiveIncomeID].day < 366, "The investment is already spent");
-        uint256 totalReward;
-        uint256 numberOfDaysHeld = (block.timestamp - passiveInvestors[_passiveIncomeID].investmentTimeStamp) / dayseconds;
-        if(numberOfDaysHeld > 365){
+        require(passiveInvestors[_passiveIncomeID].day < 366, "The investment is already claimed");
+        uint256 totalReward = 0;
+        uint256 numberOfDaysHeld = (block.timestamp - passiveInvestors[_passiveIncomeID].investmentTimeStamp) / secondsInDay;
+        if(numberOfDaysHeld > daysInYear){
             passiveInvestors[_passiveIncomeID].spent2 = true;
-            numberOfDaysHeld = 365;
+            numberOfDaysHeld = daysInYear;
             totalReward = passiveInvestors[_passiveIncomeID].investedAmount2;
         }
         uint numberOfDaysOwed = numberOfDaysHeld - (passiveInvestors[_passiveIncomeID].day - 1);
         uint totalDailyPassiveIncome = passiveInvestors[_passiveIncomeID].dailyPassiveIncome * numberOfDaysOwed;
-        passiveInvestors[_passiveIncomeID].day = numberOfDaysHeld + 1;
-        totalReward = totalReward + totalDailyPassiveIncome;
+        passiveInvestors[_passiveIncomeID].day = numberOfDaysHeld.add(1);
+        totalReward = totalReward.add(totalDailyPassiveIncome);
         if(totalReward > 0){
-            totalSupply = totalSupply.add(totalReward);
-            balanceOf[address(0)] = balanceOf[address(0)].sub(totalReward);
-            balanceOf[msg.sender] = balanceOf[msg.sender].add(totalReward);
+            _totalSupply = _totalSupply.add(totalReward);
+            _balances[address(0)] = _balances[address(0)].sub(totalReward);
+            _balances[_msgSender()] = _balances[_msgSender()].add(totalReward);
             emit Transfer(
                 address(0),
-                msg.sender,
+                _msgSender(),
                 totalReward
             );
             emit PassiveSpent(
-                msg.sender,
+                _msgSender(),
                 totalReward
             );
             return true;
@@ -441,10 +742,10 @@ contract BNY   {
         }
     }
     function BNY_AssetSolidification(address _user, uint256 _value) external returns (bool success) {
-        require(msg.sender == BNY_DATA, "No Permission");
-        require(balanceOf[_user] >= _value, "User have incufficent balance");
-        balanceOf[_user] = balanceOf[_user].sub(_value);
-        totalSupply = totalSupply.sub(_value);
+        require(_msgSender() == BNY_DATA, "No Permission");
+        require(_balances[_user] >= _value, "User have incufficent balance");
+        _balances[_user] = _balances[_user].sub(_value);
+        _totalSupply = _totalSupply.sub(_value);
         emit Transfer(
             _user,
             address(1),
@@ -453,9 +754,9 @@ contract BNY   {
         return true;
     }
     function BNY_AssetDesolidification(address _user,uint256 _value) external returns (bool success) {
-        require(msg.sender == BNY_DATA, "No Permission");
-        balanceOf[_user] = balanceOf[_user].add(_value);
-        totalSupply = totalSupply.add(_value);
+        require(_msgSender() == BNY_DATA, "No Permission");
+        _balances[_user] = _balances[_user].add(_value);
+        _totalSupply = _totalSupply.add(_value);
         emit Transfer(
             address(1),
             _user,
@@ -464,8 +765,8 @@ contract BNY   {
         return true;
     }
     function getBalanceOf(address _user) external view returns (uint256 balance) {
-        require(msg.sender == BNY_DATA, "No Permission");
-        return balanceOf[_user];
+        require(_msgSender() == BNY_DATA, "No Permission");
+        return _balances[_user];
     }
     function getPassiveDetails (uint _passiveIncomeID) external view returns (
         address investorAddress2,
@@ -496,7 +797,7 @@ contract BNY   {
         return (passiveInvestors[_passiveIncomeID].investmentUnlocktime2);
     }
     function getPassiveNumberOfDays (uint _passiveIncomeID) external view returns (uint256){
-        return (block.timestamp - passiveInvestors[_passiveIncomeID].investmentTimeStamp) / dayseconds;
+        return (block.timestamp - passiveInvestors[_passiveIncomeID].investmentTimeStamp) / secondsInDay;
     }
     function getPassiveInvestmentTimeStamp(uint256 _passiveIncomeID) external view returns (uint256){
         return (passiveInvestors[_passiveIncomeID].investmentTimeStamp);
@@ -518,9 +819,9 @@ contract BNY   {
         return block.timestamp;
     }
     function getInterestRate(uint256 _investment, uint _term) public view returns (uint256 rate) {
-        require(_investment < totalSupply, "The investment is too large");
-        uint256 totalinvestments = balanceOf[address(0)].mul(Percent);
-        uint256 investmentsPercentage = totalinvestments.div(totalSupply);
+        require(_investment < _totalSupply, "The investment is too large");
+        uint256 totalinvestments = _balances[address(0)].mul(Percent);
+        uint256 investmentsPercentage = totalinvestments.div(_totalSupply);
         uint256 adjustedinterestrate = (Percent.sub(investmentsPercentage)).mul(interestRate);
         uint256 interestoninvestment = (adjustedinterestrate.mul(_investment)).div(10000000000000);
         return (interestoninvestment.mul(_term));
@@ -535,16 +836,16 @@ contract BNY   {
         bool _spent
     ){
         _spent = false;
-        _numberOfDaysHeld = (block.timestamp - passiveInvestors[_passiveIncomeID].investmentTimeStamp) / dayseconds;
-        if(_numberOfDaysHeld > 365){
-            _numberOfDaysHeld = 365;
+        _numberOfDaysHeld = (block.timestamp - passiveInvestors[_passiveIncomeID].investmentTimeStamp) / secondsInDay;
+        if(_numberOfDaysHeld > daysInYear){
+            _numberOfDaysHeld = daysInYear;
             _totalReward = passiveInvestors[_passiveIncomeID].investedAmount2;
             _spent = true;
         }
         _numberOfDaysOwed = _numberOfDaysHeld - (passiveInvestors[_passiveIncomeID].day - 1);
         _totalDailyPassiveIncome = passiveInvestors[_passiveIncomeID].dailyPassiveIncome * _numberOfDaysOwed;
-        _day = _numberOfDaysHeld + 1;
-        _totalReward = _totalReward + _totalDailyPassiveIncome;
+        _day = _numberOfDaysHeld.add(1);
+        _totalReward = _totalReward.add(_totalDailyPassiveIncome);
         _dailyPassiveIncome = passiveInvestors[_passiveIncomeID].dailyPassiveIncome;
         return (
             _numberOfDaysHeld,
