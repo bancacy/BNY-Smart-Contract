@@ -1,8 +1,8 @@
 pragma solidity 0.5.11;
-import "./IERC20.sol";
+import "./ERC20Burnable.sol";
 import "./SafeMath.sol";
 import "./FutureAddressCalc.sol";
-contract BNY   {
+contract BNY is ERC20Burnable {
     using SafeMath for uint256;
     using AddressCalc for address payable;
     event Deposit(
@@ -38,40 +38,30 @@ contract BNY   {
         address indexed _spender,
         uint256 _value
     );
-    address private _owner;
-    string constant public name = "BANCACY";
-    string constant public symbol = "BNY";
-    string constant public standard = "BNY Token";
-    uint256 constant public decimals = 18 ;
-    uint256 private _totalSupply;
     uint256 public totalInvestmentAfterInterest;
     uint256 public investorIndex = 1;
     uint256 public passiveInvestorIndex = 1;
     uint256 constant public interestRate = 16;
     uint256 constant public multiplicationForMidTerm  = 5;
     uint256 constant public multiplicationForLongTerm = 20;
-    uint256 public minForPassive = 1200000 * (10 ** uint256(decimals));
-    uint256 public tokensForSale = 534600000 * (10 ** uint256(decimals));
-    uint256 public tokensSold = 1 * (10 ** uint256(decimals));
-    uint256 constant public tokensPerWei = 200000;
+    uint256 public minForPassive = 1200000 * (10 ** uint256(decimals()));
+    uint256 public tokensForSale = 534600000 * (10 ** uint256(decimals()));
+    uint256 public tokensSold = 1 * (10 ** uint256(decimals()));
+    uint256 constant public tokensPerWei = 54000;
   	uint256 constant public Percent = 1000000000;
     uint256 constant internal secondsInDay = 86400;
     uint256 constant internal secondsInWeek = 604800;
     uint256 constant internal secondsInMonth = 2419200;
     uint256 constant internal secondsInQuarter = 7257600;
 	uint256 constant internal daysInYear = 365;
-    uint256 internal _startSupply = 455400000 * (10 ** uint256(decimals));
+    uint256 internal _startSupply = 455400000 * (10 ** uint256(decimals()));
     address payable public fundsWallet;
     address public XBNY;
     address public BNY_DATA;
-
 	enum TermData {DEFAULT, ONE, TWO, THREE}
-
     mapping(uint256 => Investment) private investors;
     mapping(uint256 => PassiveIncome) private passiveInvestors;
-    mapping (address => uint256) private _balances;
-    mapping (address => mapping (address => uint256)) private _allowances;
-    struct Investment {
+	struct Investment {
         address investorAddress;
         uint256 investedAmount;
         uint256 investmentUnlocktime;
@@ -87,19 +77,12 @@ contract BNY   {
         uint256 day;
         bool spent2;
     }
-    constructor (address payable _fundsWallet)  public {
-        _totalSupply = _startSupply;
-        fundsWallet = _fundsWallet;
-        _balances[fundsWallet] = _startSupply;
-        _balances[address(0)] = 0;
-        emit Transfer(
-            address(0),
-            fundsWallet,
-            _startSupply
-        );
-        XBNY = _msgSender().futureAddressCalc(1);
-        BNY_DATA = _msgSender().futureAddressCalc(2);
-        _owner = _msgSender();
+    string constant public standard = "BNY Token";
+    constructor (address payable _fundsWallet) public ERC20Detailed("BANCACY", "BNY", 18){
+		fundsWallet = _fundsWallet;
+		_mint(_fundsWallet, _startSupply);
+		XBNY = _msgSender().futureAddressCalc(1);
+		BNY_DATA = _msgSender().futureAddressCalc(2);
     }
     function () external payable{
         require(tokensSold < tokensForSale, "All tokens are sold");
@@ -111,151 +94,7 @@ contract BNY   {
         require(totalTokens <= (tokensForSale).sub(tokensSold), "All tokens are sold");
         fundsWallet.transfer(msg.value);
         tokensSold = tokensSold.add((totalTokens));
-        _totalSupply = _totalSupply.add((totalTokens));
-        _balances[_msgSender()] = _balances[_msgSender()].add((totalTokens));
-        emit Transfer(
-            address(0),
-            _msgSender(),
-            totalTokens
-        );
-    }
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() public view returns (uint256) {
-        return _totalSupply;
-    }
-    /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
-        return true;
-    }
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 value) public returns (bool) {
-        _approve(_msgSender(), spender, value);
-        return true;
-    }
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20};
-     *
-     * Requirements:
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `value`.
-     * - the caller must have allowance for `sender`'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public returns (bool) {
-        _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
-        return true;
-    }
-	/**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view returns (uint256) {
-        return _allowances[owner][spender];
-    }
-	/**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view returns (uint256) {
-        return _balances[account];
-    }
-	/**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
-        return true;
-    }
-
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
-        return true;
-    }
-	/**
-     * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
-     * This is internal function is equivalent to {transfer}, and can be used to
-     * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
-     * Emits a {Transfer} event.
-     *
-     * Requirements:
-     *
-     * - `sender` cannot be the zero address.
-     * - `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     */
-    function _transfer(address sender, address recipient, uint256 amount) internal {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
-        _balances[recipient] = _balances[recipient].add(amount);
-        emit Transfer(sender, recipient, amount);
-    }
-	/**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner`s tokens.
-     *
-     * This is internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 value) internal {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = value;
-        emit Approval(owner, spender, value);
-    }
-	function _msgSender() internal view returns (address payable) {
-        return msg.sender;
+        _mint(_msgSender(), totalTokens * (10 ** uint256(decimals())));
     }
     function makeInvestment(uint256 _unlockTime, uint256 _amount, uint term123) external returns (uint256) {
         require(_balances[_msgSender()] >= _amount, "You dont have sufficent amount of tokens");
@@ -292,23 +131,21 @@ contract BNY   {
             );
             emit Transfer(
                 _msgSender(),
-                address(0),
+                address(1),
                 _amount
             );
             emit Transfer(
-                address(0),
-                address(0),
+                address(1),
+                address(1),
                 totalInvestmentAfterInterest.sub(_amount)
             );
             _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
-            _balances[address(0)] = _balances[address(0)].add(totalInvestmentAfterInterest);
+            _balances[address(1)] = _balances[address(1)].add(totalInvestmentAfterInterest);
             _totalSupply = _totalSupply.sub(_amount);
             return (currentInvestor);
         }
-
         // Recalculate the original termAfter (set in weeks) from unlocktime (in seconds) (instead as whole months, in seconds) for multiplier.
         termAfter = (_unlockTime.div(secondsInMonth));
-
         /*
         The unlock time in seconds is more than or equal to 1 month in seconds.
         The user has selected "months" / "mid term" (2) in the UI.
@@ -337,16 +174,16 @@ contract BNY   {
             );
             emit Transfer(
                 _msgSender(),
-                address(0),
+                address(1),
                 _amount
             );
             emit Transfer(
-                address(0),
-                address(0),
+                address(1),
+                address(1),
                 totalInvestmentAfterInterest.sub(_amount)
             );
             _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
-            _balances[address(0)] = _balances[address(0)].add(totalInvestmentAfterInterest);
+            _balances[address(1)] = _balances[address(1)].add(totalInvestmentAfterInterest);
             _totalSupply = _totalSupply.sub(_amount);
             return (currentInvestor);
         }
@@ -382,16 +219,16 @@ contract BNY   {
             );
             emit Transfer(
                 _msgSender(),
-                address(0),
+                address(1),
                 _amount
             );
             emit Transfer(
-                address(0),
-                address(0),
+                address(1),
+                address(1),
                 totalInvestmentAfterInterest.sub(_amount)
             );
             _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
-            _balances[address(0)] = _balances[address(0)].add(totalInvestmentAfterInterest);
+            _balances[address(1)] = _balances[address(1)].add(totalInvestmentAfterInterest);
             _totalSupply = _totalSupply.sub(_amount);
             return (currentInvestor);
         }
@@ -402,10 +239,10 @@ contract BNY   {
         require(investors[_investmentId].investmentUnlocktime < block.timestamp, "Unlock time for the investment did not pass");
         investors[_investmentId].spent = true;
         _totalSupply = _totalSupply.add(investors[_investmentId].investedAmount);
-        _balances[address(0)] = _balances[address(0)].sub(investors[_investmentId].investedAmount);
+        _balances[address(1)] = _balances[address(1)].sub(investors[_investmentId].investedAmount);
         _balances[_msgSender()] = _balances[_msgSender()].add(investors[_investmentId].investedAmount);
         emit Transfer(
-            address(0),
+            address(1),
             _msgSender(),
             investors[_investmentId].investedAmount
         );
@@ -432,12 +269,12 @@ contract BNY   {
         );
         emit Transfer(
             _msgSender(),
-            address(0),
+            address(1),
             _amount
         );
         emit Transfer(
-            address(0),
-            address(0),
+            address(1),
+            address(1),
             interestOnInvestment.mul(daysInYear)
         );
         emit PassiveDeposit(
@@ -449,7 +286,7 @@ contract BNY   {
             passiveInvestors[currentInvestor].investmentTimeStamp
         );
         _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
-        _balances[address(0)] = _balances[address(0)].add((interestOnInvestment.mul(daysInYear)).add(_amount));
+        _balances[address(1)] = _balances[address(1)].add((interestOnInvestment.mul(daysInYear)).add(_amount));
         _totalSupply = _totalSupply.sub(_amount);
         return (currentInvestor);
     }
@@ -473,10 +310,10 @@ contract BNY   {
         totalReward = totalReward.add(totalDailyPassiveIncome);
         if(totalReward > 0){
             _totalSupply = _totalSupply.add(totalReward);
-            _balances[address(0)] = _balances[address(0)].sub(totalReward);
+            _balances[address(1)] = _balances[address(1)].sub(totalReward);
             _balances[_msgSender()] = _balances[_msgSender()].add(totalReward);
             emit Transfer(
-                address(0),
+                address(1),
                 _msgSender(),
                 totalReward
             );
@@ -499,7 +336,7 @@ contract BNY   {
         _totalSupply = _totalSupply.sub(_value);
         emit Transfer(
             _user,
-            address(1),
+            address(2),
             _value
         );
         return true;
@@ -509,7 +346,7 @@ contract BNY   {
         _balances[_user] = _balances[_user].add(_value);
         _totalSupply = _totalSupply.add(_value);
         emit Transfer(
-            address(1),
+            address(2),
             _user,
             _value
         );
@@ -571,7 +408,7 @@ contract BNY   {
     }
     function getInterestRate(uint256 _investment, uint _term) public view returns (uint256 rate) {
         require(_investment < _totalSupply, "The investment is too large");
-        uint256 totalinvestments = _balances[address(0)].mul(Percent);
+        uint256 totalinvestments = _balances[address(1)].mul(Percent);
         uint256 investmentsPercentage = totalinvestments.div(_totalSupply);
         uint256 adjustedinterestrate = (Percent.sub(investmentsPercentage)).mul(interestRate);
         uint256 interestoninvestment = (adjustedinterestrate.mul(_investment)).div(10000000000000);
