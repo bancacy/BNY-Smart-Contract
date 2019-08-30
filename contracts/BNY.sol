@@ -91,9 +91,9 @@ contract BNY   {
         _totalSupply = _startSupply;
         fundsWallet = _fundsWallet;
         _balances[fundsWallet] = _startSupply;
-        _balances[address(0)] = 0;
+        _balances[address(1)] = 0;
         emit Transfer(
-            address(0),
+            address(1),
             fundsWallet,
             _startSupply
         );
@@ -254,6 +254,48 @@ contract BNY   {
         _allowances[owner][spender] = value;
         emit Approval(owner, spender, value);
     }
+	/**
+     * @dev Destroys `amount` tokens from the caller.
+     *
+     * See {ERC20-_burn}.
+     */
+    function burn(uint256 amount) public {
+        _burn(_msgSender(), amount);
+    }
+    /**
+     * @dev Destroys `amount` tokens from `account`, reducing the
+     * total supply.
+     *
+     * Emits a {Transfer} event with `to` set to the zero address.
+     *
+     * Requirements
+     *
+     * - `account` cannot be the zero address.
+     * - `account` must have at least `amount` tokens.
+     */
+    function _burn(address account, uint256 amount) internal {
+        require(account != address(0), "ERC20: burn from the zero address");
+
+        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
+        _totalSupply = _totalSupply.sub(amount);
+        emit Transfer(account, address(0), amount);
+    }
+    /**
+     * @dev See {ERC20-_burnFrom}.
+     */
+    function burnFrom(address account, uint256 amount) public {
+        _burnFrom(account, amount);
+    }
+	/**
+     * @dev Destroys `amount` tokens from `account`.`amount` is then deducted
+     * from the caller's allowance.
+     *
+     * See {_burn} and {_approve}.
+     */
+    function _burnFrom(address account, uint256 amount) internal {
+        _burn(account, amount);
+        _approve(account, _msgSender(), _allowances[account][_msgSender()].sub(amount, "ERC20: burn amount exceeds allowance"));
+    }
 	function _msgSender() internal view returns (address payable) {
         return msg.sender;
     }
@@ -292,16 +334,16 @@ contract BNY   {
             );
             emit Transfer(
                 _msgSender(),
-                address(0),
+                address(1),
                 _amount
             );
             emit Transfer(
-                address(0),
-                address(0),
+                address(1),
+                address(1),
                 totalInvestmentAfterInterest.sub(_amount)
             );
             _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
-            _balances[address(0)] = _balances[address(0)].add(totalInvestmentAfterInterest);
+            _balances[address(1)] = _balances[address(1)].add(totalInvestmentAfterInterest);
             _totalSupply = _totalSupply.sub(_amount);
             return (currentInvestor);
         }
@@ -337,16 +379,16 @@ contract BNY   {
             );
             emit Transfer(
                 _msgSender(),
-                address(0),
+                address(1),
                 _amount
             );
             emit Transfer(
-                address(0),
-                address(0),
+                address(1),
+                address(1),
                 totalInvestmentAfterInterest.sub(_amount)
             );
             _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
-            _balances[address(0)] = _balances[address(0)].add(totalInvestmentAfterInterest);
+            _balances[address(1)] = _balances[address(1)].add(totalInvestmentAfterInterest);
             _totalSupply = _totalSupply.sub(_amount);
             return (currentInvestor);
         }
@@ -382,16 +424,16 @@ contract BNY   {
             );
             emit Transfer(
                 _msgSender(),
-                address(0),
+                address(1),
                 _amount
             );
             emit Transfer(
-                address(0),
-                address(0),
+                address(1),
+                address(1),
                 totalInvestmentAfterInterest.sub(_amount)
             );
             _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
-            _balances[address(0)] = _balances[address(0)].add(totalInvestmentAfterInterest);
+            _balances[address(1)] = _balances[address(1)].add(totalInvestmentAfterInterest);
             _totalSupply = _totalSupply.sub(_amount);
             return (currentInvestor);
         }
@@ -402,10 +444,10 @@ contract BNY   {
         require(investors[_investmentId].investmentUnlocktime < block.timestamp, "Unlock time for the investment did not pass");
         investors[_investmentId].spent = true;
         _totalSupply = _totalSupply.add(investors[_investmentId].investedAmount);
-        _balances[address(0)] = _balances[address(0)].sub(investors[_investmentId].investedAmount);
+        _balances[address(1)] = _balances[address(1)].sub(investors[_investmentId].investedAmount);
         _balances[_msgSender()] = _balances[_msgSender()].add(investors[_investmentId].investedAmount);
         emit Transfer(
-            address(0),
+            address(1),
             _msgSender(),
             investors[_investmentId].investedAmount
         );
@@ -432,12 +474,12 @@ contract BNY   {
         );
         emit Transfer(
             _msgSender(),
-            address(0),
+            address(1),
             _amount
         );
         emit Transfer(
-            address(0),
-            address(0),
+            address(1),
+            address(1),
             interestOnInvestment.mul(daysInYear)
         );
         emit PassiveDeposit(
@@ -449,7 +491,7 @@ contract BNY   {
             passiveInvestors[currentInvestor].investmentTimeStamp
         );
         _balances[_msgSender()] = _balances[_msgSender()].sub(_amount);
-        _balances[address(0)] = _balances[address(0)].add((interestOnInvestment.mul(daysInYear)).add(_amount));
+        _balances[address(1)] = _balances[address(1)].add((interestOnInvestment.mul(daysInYear)).add(_amount));
         _totalSupply = _totalSupply.sub(_amount);
         return (currentInvestor);
     }
@@ -473,10 +515,10 @@ contract BNY   {
         totalReward = totalReward.add(totalDailyPassiveIncome);
         if(totalReward > 0){
             _totalSupply = _totalSupply.add(totalReward);
-            _balances[address(0)] = _balances[address(0)].sub(totalReward);
+            _balances[address(1)] = _balances[address(1)].sub(totalReward);
             _balances[_msgSender()] = _balances[_msgSender()].add(totalReward);
             emit Transfer(
-                address(0),
+                address(1),
                 _msgSender(),
                 totalReward
             );
@@ -499,7 +541,7 @@ contract BNY   {
         _totalSupply = _totalSupply.sub(_value);
         emit Transfer(
             _user,
-            address(1),
+            address(2),
             _value
         );
         return true;
@@ -509,7 +551,7 @@ contract BNY   {
         _balances[_user] = _balances[_user].add(_value);
         _totalSupply = _totalSupply.add(_value);
         emit Transfer(
-            address(1),
+            address(2),
             _user,
             _value
         );
@@ -571,7 +613,7 @@ contract BNY   {
     }
     function getInterestRate(uint256 _investment, uint _term) public view returns (uint256 rate) {
         require(_investment < _totalSupply, "The investment is too large");
-        uint256 totalinvestments = _balances[address(0)].mul(Percent);
+        uint256 totalinvestments = _balances[address(1)].mul(Percent);
         uint256 investmentsPercentage = totalinvestments.div(_totalSupply);
         uint256 adjustedinterestrate = (Percent.sub(investmentsPercentage)).mul(interestRate);
         uint256 interestoninvestment = (adjustedinterestrate.mul(_investment)).div(10000000000000);
