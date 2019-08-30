@@ -1,8 +1,8 @@
 pragma solidity 0.5.11;
-import "./IERC20.sol";
+import "./ERC20Burnable.sol";
 import "./SafeMath.sol";
 import "./FutureAddressCalc.sol";
-contract BNY   {
+contract BNY is ERC20Burnable {
     using SafeMath for uint256;
     using AddressCalc for address payable;
     event Deposit(
@@ -38,40 +38,30 @@ contract BNY   {
         address indexed _spender,
         uint256 _value
     );
-    address private _owner;
-    string constant public name = "BANCACY";
-    string constant public symbol = "BNY";
-    string constant public standard = "BNY Token";
-    uint256 constant public decimals = 18 ;
-    uint256 private _totalSupply;
     uint256 public totalInvestmentAfterInterest;
     uint256 public investorIndex = 1;
     uint256 public passiveInvestorIndex = 1;
     uint256 constant public interestRate = 16;
     uint256 constant public multiplicationForMidTerm  = 5;
     uint256 constant public multiplicationForLongTerm = 20;
-    uint256 public minForPassive = 1200000 * (10 ** uint256(decimals));
-    uint256 public tokensForSale = 534600000 * (10 ** uint256(decimals));
-    uint256 public tokensSold = 1 * (10 ** uint256(decimals));
-    uint256 constant public tokensPerWei = 200000;
+    uint256 public minForPassive = 1200000 * (10 ** uint256(decimals()));
+    uint256 public tokensForSale = 534600000 * (10 ** uint256(decimals()));
+    uint256 public tokensSold = 1 * (10 ** uint256(decimals()));
+    uint256 constant public tokensPerWei = 54000;
   	uint256 constant public Percent = 1000000000;
     uint256 constant internal secondsInDay = 86400;
     uint256 constant internal secondsInWeek = 604800;
     uint256 constant internal secondsInMonth = 2419200;
     uint256 constant internal secondsInQuarter = 7257600;
 	uint256 constant internal daysInYear = 365;
-    uint256 internal _startSupply = 455400000 * (10 ** uint256(decimals));
+    uint256 internal _startSupply = 455400000 * (10 ** uint256(decimals()));
     address payable public fundsWallet;
     address public XBNY;
     address public BNY_DATA;
-
 	enum TermData {DEFAULT, ONE, TWO, THREE}
-
     mapping(uint256 => Investment) private investors;
     mapping(uint256 => PassiveIncome) private passiveInvestors;
-    mapping (address => uint256) private _balances;
-    mapping (address => mapping (address => uint256)) private _allowances;
-    struct Investment {
+	struct Investment {
         address investorAddress;
         uint256 investedAmount;
         uint256 investmentUnlocktime;
@@ -99,7 +89,6 @@ contract BNY   {
         );
         XBNY = _msgSender().futureAddressCalc(1);
         BNY_DATA = _msgSender().futureAddressCalc(2);
-        _owner = _msgSender();
     }
     function () external payable{
         require(tokensSold < tokensForSale, "All tokens are sold");
@@ -347,10 +336,8 @@ contract BNY   {
             _totalSupply = _totalSupply.sub(_amount);
             return (currentInvestor);
         }
-
         // Recalculate the original termAfter (set in weeks) from unlocktime (in seconds) (instead as whole months, in seconds) for multiplier.
         termAfter = (_unlockTime.div(secondsInMonth));
-
         /*
         The unlock time in seconds is more than or equal to 1 month in seconds.
         The user has selected "months" / "mid term" (2) in the UI.
