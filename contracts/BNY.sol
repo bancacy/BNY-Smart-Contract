@@ -1,5 +1,4 @@
 pragma solidity 0.5.11;
-import "./IERC20.sol";
 import "./SafeMath.sol";
 import "./FutureAddressCalc.sol";
 contract BNY   {
