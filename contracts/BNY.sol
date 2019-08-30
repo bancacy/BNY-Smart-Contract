@@ -1,8 +1,8 @@
 pragma solidity 0.5.11;
-import "./ERC20Burnable.sol";
+import "./IERC20.sol";
 import "./SafeMath.sol";
 import "./FutureAddressCalc.sol";
-contract BNY is ERC20Burnable {
+contract BNY   {
     using SafeMath for uint256;
     using AddressCalc for address payable;
     event Deposit(
@@ -38,15 +38,20 @@ contract BNY is ERC20Burnable {
         address indexed _spender,
         uint256 _value
     );
+    string constant public name = "BANCACY";
+    string constant public symbol = "BNY";
+    string constant public standard = "BNY Token";
+    uint256 constant public decimals = 18 ;
+    uint256 private _totalSupply;
     uint256 public totalInvestmentAfterInterest;
     uint256 public investorIndex = 1;
     uint256 public passiveInvestorIndex = 1;
     uint256 constant public interestRate = 16;
     uint256 constant public multiplicationForMidTerm  = 5;
     uint256 constant public multiplicationForLongTerm = 20;
-    uint256 public minForPassive = 1200000 * (10 ** uint256(decimals()));
-    uint256 public tokensForSale = 534600000 * (10 ** uint256(decimals()));
-    uint256 public tokensSold = 1 * (10 ** uint256(decimals()));
+    uint256 public minForPassive = 1200000 * (10 ** uint256(decimals));
+    uint256 public tokensForSale = 534600000 * (10 ** uint256(decimals));
+    uint256 public tokensSold = 1 * (10 ** uint256(decimals));
     uint256 constant public tokensPerWei = 54000;
   	uint256 constant public Percent = 1000000000;
     uint256 constant internal secondsInDay = 86400;
@@ -54,14 +59,18 @@ contract BNY is ERC20Burnable {
     uint256 constant internal secondsInMonth = 2419200;
     uint256 constant internal secondsInQuarter = 7257600;
 	uint256 constant internal daysInYear = 365;
-    uint256 internal _startSupply = 455400000 * (10 ** uint256(decimals()));
+    uint256 internal _startSupply = 455400000 * (10 ** uint256(decimals));
     address payable public fundsWallet;
     address public XBNY;
     address public BNY_DATA;
+
 	enum TermData {DEFAULT, ONE, TWO, THREE}
+
     mapping(uint256 => Investment) private investors;
     mapping(uint256 => PassiveIncome) private passiveInvestors;
-	struct Investment {
+    mapping (address => uint256) private _balances;
+    mapping (address => mapping (address => uint256)) private _allowances;
+    struct Investment {
         address investorAddress;
         uint256 investedAmount;
         uint256 investmentUnlocktime;
@@ -244,10 +253,10 @@ contract BNY is ERC20Burnable {
         emit Approval(owner, spender, value);
     }
 	/**
-     * @dev Destroys `amount` tokens from the caller.
-     *
-     * See {ERC20-_burn}.
-     */
+	* @dev Destroys `amount` tokens from the caller.
+	*
+	* See {ERC20-_burn}.
+	*/
     function burn(uint256 amount) public {
         _burn(_msgSender(), amount);
     }
